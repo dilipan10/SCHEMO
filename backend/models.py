@@ -85,7 +85,7 @@ def get_eligible_schemes(user):
     params = (
         user["community"], user["community"],
         user["age"], user["age"],
-        user["income"],
+        user.get("income", 0),
     )
     return execute_query(sql, params, fetch=True)
 
