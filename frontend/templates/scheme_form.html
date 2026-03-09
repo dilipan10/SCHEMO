@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="page-hero">
+    <div class="container">
+        <h1 class="page-hero-title">{{ action }} Scheme</h1>
+        <p class="page-hero-sub">Fill in all the details carefully and save the scheme.</p>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container" style="max-width:820px;">
+        <div class="auth-card" style="padding:2.5rem;">
+            <form method="POST" class="auth-form scheme-form">
+
+                <div class="form-group">
+                    <label for="scheme_name">Scheme Name *</label>
+                    <input type="text" id="scheme_name" name="scheme_name" class="form-control"
+                        value="{{ scheme.scheme_name if scheme else '' }}" placeholder="e.g. PM Kisan Samman Nidhi"
+                        required />
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Description *</label>
+                    <textarea id="description" name="description" class="form-control" rows="3"
+                        placeholder="Brief description of the scheme…"
+                        required>{{ scheme.description if scheme else '' }}</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="eligibility">Eligibility Criteria *</label>
+                    <textarea id="eligibility" name="eligibility" class="form-control" rows="3"
+                        placeholder="Who can apply for this scheme…"
+                        required>{{ scheme.eligibility if scheme else '' }}</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="community">Target Community *</label>
+                    <input type="text" id="community" name="community" class="form-control"
+                        value="{{ scheme.community if scheme else '' }}"
+                        placeholder="e.g. All  or  SC,ST  or  OBC,Minority" required />
+                    <small class="form-hint">Use 'All' for universal schemes. Comma-separate multiple: SC,ST,OBC</small>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="min_age">Minimum Age</label>
+                        <input type="number" id="min_age" name="min_age" class="form-control"
+                            value="{{ scheme.min_age if scheme else 0 }}" min="0" max="120" />
+                    </div>
+                    <div class="form-group">
+                        <label for="max_age">Maximum Age</label>
+                        <input type="number" id="max_age" name="max_age" class="form-control"
+                            value="{{ scheme.max_age if scheme else 100 }}" min="0" max="120" />
+                    </div>
+                    <div class="form-group">
+                        <label for="max_income">Max Annual Income (₹)</label>
+                        <input type="number" id="max_income" name="max_income" class="form-control"
+                            value="{{ scheme.max_income if scheme else 999999999 }}" min="0"
+                            placeholder="0 = No limit" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="benefits">Benefits *</label>
+                    <textarea id="benefits" name="benefits" class="form-control" rows="3"
+                        placeholder="List all benefits provided under this scheme…"
+                        required>{{ scheme.benefits if scheme else '' }}</textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="documents_required">Documents Required *</label>
+                    <textarea id="documents_required" name="documents_required" class="form-control" rows="2"
+                        placeholder="e.g. Aadhaar Card, Income Certificate, Bank Passbook…"
+                        required>{{ scheme.documents_required if scheme else '' }}</textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="deadline">Application Deadline</label>
+                        <input type="date" id="deadline" name="deadline" class="form-control"
+                            value="{{ scheme.deadline if scheme and scheme.deadline else '' }}" />
+                        <small class="form-hint">Leave blank for ongoing schemes</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="official_link">Official Website Link *</label>
+                        <input type="url" id="official_link" name="official_link" class="form-control"
+                            value="{{ scheme.official_link if scheme else '' }}" placeholder="https://example.gov.in"
+                            required />
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <a href="{{ url_for('main.admin_dashboard') }}" class="btn btn-outline">← Cancel</a>
+                    <button type="submit" class="btn btn-primary">{{ action }} Scheme →</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

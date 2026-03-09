@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="auth-section">
+    <div class="auth-container auth-container--login">
+        <div class="auth-card">
+            <div class="auth-header">
+                <div class="auth-icon">🔑</div>
+                <h1>Welcome Back</h1>
+                <p>Login to access your personalized scheme dashboard</p>
+            </div>
+
+            <form action="{{ url_for('main.login') }}" method="POST" class="auth-form" id="loginForm">
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" class="form-control" placeholder="you@example.com"
+                        required autofocus />
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="input-wrapper">
+                        <input type="password" id="password" name="password" class="form-control"
+                            placeholder="Enter your password" required />
+                        <button type="button" class="toggle-pw" data-target="password"
+                            aria-label="Show password">👁</button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-full">Login →</button>
+            </form>
+
+            <div class="auth-footer">
+                Don't have an account? <a href="{{ url_for('main.signup') }}">Sign up for free</a>
+            </div>
+        </div>
+
+        <div class="auth-illustration auth-illustration--login">
+            <div class="illus-content">
+                <h2>Your Benefits Await</h2>
+                <p>Log in and instantly discover which government schemes you qualify for.</p>
+                <div class="login-features">
+                    <div class="login-feat">
+                        <span class="feat-icon">📋</span>
+                        <span>Personalized scheme dashboard</span>
+                    </div>
+                    <div class="login-feat">
+                        <span class="feat-icon">🎯</span>
+                        <span>Eligibility-based filtering</span>
+                    </div>
+                    <div class="login-feat">
+                        <span class="feat-icon">📎</span>
+                        <span>Document checklists included</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

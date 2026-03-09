@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="dashboard-section">
+    <div class="container">
+
+        <!-- ── Profile Card ── -->
+        <div class="dashboard-header">
+            <div class="profile-card">
+                <div class="profile-avatar">{{ user.name[0].upper() }}</div>
+                <div class="profile-info">
+                    <h1 class="profile-name">{{ user.name }}</h1>
+                    <p class="profile-email">{{ user.email }}</p>
+                    <div class="profile-tags">
+                        <span class="tag tag-community">{{ user.community }}</span>
+                        <span class="tag tag-gender">{{ user.gender }}</span>
+                        <span class="tag tag-state">{{ user.state }}</span>
+                    </div>
+                </div>
+                <a href="{{ url_for('main.logout') }}" class="btn btn-outline btn-sm">Logout</a>
+            </div>
+        </div>
+
+        <!-- ── Profile Details ── -->
+        <div class="profile-details-grid">
+            <div class="detail-card">
+                <span class="detail-icon">🎂</span>
+                <div>
+                    <span class="detail-label">Age</span>
+                    <span class="detail-value">{{ user.age }} years</span>
+                </div>
+            </div>
+            <div class="detail-card">
+                <span class="detail-icon">💼</span>
+                <div>
+                    <span class="detail-label">Occupation</span>
+                    <span class="detail-value">{{ user.occupation }}</span>
+                </div>
+            </div>
+            <div class="detail-card">
+                <span class="detail-icon">🏠</span>
+                <div>
+                    <span class="detail-label">State</span>
+                    <span class="detail-value">{{ user.state }}</span>
+                </div>
+            </div>
+            <div class="detail-card">
+                <span class="detail-icon">🎯</span>
+                <div>
+                    <span class="detail-label">Eligible Schemes</span>
+                    <span class="detail-value highlight-green">{{ schemes|length }} found</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Eligible Schemes ── -->
+        <div class="dashboard-schemes">
+            <div class="section-header section-header--left">
+                <h2>Your Eligible Schemes
+                    <span class="scheme-count-badge">{{ schemes|length }}</span>
+                </h2>
+                <p>Based on your age, community &amp; occupation, you qualify for these government schemes:</p>
+            </div>
+
+            {% if schemes %}
+            <div class="scheme-grid">
+                {% for s in schemes %}
+                <div class="scheme-card" data-community="{{ s.community }}">
+                    <div class="scheme-card-header">
+                        <span class="scheme-community-badge">{{ s.community }}</span>
+                        {% if s.deadline %}
+                        <span class="scheme-deadline">📅 {{ s.deadline.strftime('%d %b %Y') if
+                            s.deadline.__class__.__name__ != 'str' else s.deadline }}</span>
+                        {% else %}
+                        <span class="scheme-deadline scheme-deadline--ongoing">🟢 Ongoing</span>
+                        {% endif %}
+                    </div>
+                    <h3 class="scheme-card-title">{{ s.scheme_name }}</h3>
+                    <p class="scheme-card-desc">{{ s.description[:160] }}{% if s.description|length > 160 %}…{% endif %}
+                    </p>
+
+                    <div class="scheme-card-meta">
+                        <div class="meta-item">
+                            <span class="meta-label">Age Limit</span>
+                            <span class="meta-value">{{ s.min_age }}–{{ s.max_age }} yrs</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label">Max Income</span>
+                            <span class="meta-value">{% if s.max_income >= 99999999 %}No limit{% else %}₹{{
+                                "{:,.0f}".format(s.max_income) }}{% endif %}</span>
+                        </div>
+                    </div>
+
+                    <details class="scheme-details">
+                        <summary>View Full Details</summary>
+                        <div class="scheme-detail-body">
+                            <h4>🎁 Benefits</h4>
+                            <p>{{ s.benefits }}</p>
+                            <h4>✅ Eligibility</h4>
+                            <p>{{ s.eligibility }}</p>
+                            <h4>📄 Documents Required</h4>
+                            <p>{{ s.documents_required }}</p>
+                        </div>
+                    </details>
+
+                    <a href="{{ s.official_link }}" target="_blank" rel="noopener"
+                        class="btn btn-primary btn-sm btn-full mt-1">
+                        Apply on Official Portal ↗
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">🔍</div>
+                <h3>No schemes found matching your profile</h3>
+                <p>Our admin team regularly updates and adds more schemes. Check back soon!</p>
+                <a href="{{ url_for('main.schemes') }}" class="btn btn-outline">Browse All Schemes</a>
+            </div>
+            {% endif %}
+        </div>
+
+    </div>
+</section>
+
+{% endblock %}

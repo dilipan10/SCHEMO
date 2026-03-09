@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="admin-section">
+    <div class="admin-container">
+
+        <!-- ══ Sidebar ══ -->
+        <aside class="admin-sidebar">
+            <div class="sidebar-brand">
+                <span>🛡</span>
+                <span>Admin Panel</span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#users-section" class="sidebar-link active" data-tab="users">
+                    <span>👥</span> Manage Users
+                </a>
+                <a href="#schemes-section" class="sidebar-link" data-tab="schemes">
+                    <span>📋</span> Manage Schemes
+                </a>
+                <a href="{{ url_for('main.admin_add_scheme') }}" class="sidebar-link sidebar-link--accent">
+                    <span>➕</span> Add New Scheme
+                </a>
+                <a href="{{ url_for('main.admin_logout') }}" class="sidebar-link sidebar-link--danger">
+                    <span>🚪</span> Logout
+                </a>
+            </nav>
+            <div class="sidebar-stats">
+                <div class="sidebar-stat">
+                    <span class="ss-num">{{ users|length }}</span>
+                    <span class="ss-label">Total Users</span>
+                </div>
+                <div class="sidebar-stat">
+                    <span class="ss-num">{{ schemes|length }}</span>
+                    <span class="ss-label">Total Schemes</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ══ Main Content ══ -->
+        <main class="admin-main">
+            <div class="admin-topbar">
+                <h1>Admin Dashboard</h1>
+                <span class="admin-badge">Logged in as {{ session.admin_username }}</span>
+            </div>
+
+            <!-- ─ Users Table ─ -->
+            <div id="users-section" class="admin-tab-panel active">
+                <div class="panel-header">
+                    <h2>Registered Users</h2>
+                    <input type="text" id="userSearch" class="form-control search-input" placeholder="🔍 Search users…"
+                        style="max-width:280px;" />
+                </div>
+
+                <div class="table-wrapper">
+                    <table class="admin-table" id="usersTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Age</th>
+                                <th>Gender</th>
+                                <th>Community</th>
+                                <th>Occupation</th>
+                                <th>State</th>
+                                <th>Joined</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for u in users %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td><strong>{{ u.name }}</strong></td>
+                                <td>{{ u.email }}</td>
+                                <td>{{ u.age }}</td>
+                                <td>{{ u.gender }}</td>
+                                <td><span class="tag tag-community">{{ u.community }}</span></td>
+                                <td>{{ u.occupation }}</td>
+                                <td>{{ u.state }}</td>
+                                <td>{{ u.created_at.strftime('%d %b %Y') if u.created_at else '—' }}</td>
+                                <td>
+                                    <form method="POST" action="{{ url_for('main.admin_delete_user', user_id=u.id) }}"
+                                        onsubmit="return confirm('Delete user {{ u.name }}? This cannot be undone.')">
+                                        <button type="submit" class="btn btn-danger btn-xs">Delete</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="10" class="table-empty">No users registered yet.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ─ Schemes Table ─ -->
+            <div id="schemes-section" class="admin-tab-panel" style="display:none;">
+                <div class="panel-header">
+                    <h2>Manage Schemes</h2>
+                    <a href="{{ url_for('main.admin_add_scheme') }}" class="btn btn-primary btn-sm">➕ Add Scheme</a>
+                </div>
+
+                <div class="table-wrapper">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Scheme Name</th>
+                                <th>Community</th>
+                                <th>Age Range</th>
+                                <th>Max Income (₹)</th>
+                                <th>Deadline</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for s in schemes %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td><strong>{{ s.scheme_name }}</strong></td>
+                                <td><span class="tag tag-community">{{ s.community }}</span></td>
+                                <td>{{ s.min_age }}–{{ s.max_age }}</td>
+                                <td>{% if s.max_income >= 99999999 %}No limit{% else %}{{ "{:,.0f}".format(s.max_income)
+                                    }}{% endif %}</td>
+                                <td>{{ s.deadline if s.deadline else '—' }}</td>
+                                <td class="action-btns">
+                                    <a href="{{ url_for('main.admin_edit_scheme', scheme_id=s.id) }}"
+                                        class="btn btn-warning btn-xs">Edit</a>
+                                    <form method="POST"
+                                        action="{{ url_for('main.admin_delete_scheme', scheme_id=s.id) }}"
+                                        style="display:inline;"
+                                        onsubmit="return confirm('Delete scheme: {{ s.scheme_name }}?')">
+                                        <button type="submit" class="btn btn-danger btn-xs">Delete</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="7" class="table-empty">No schemes found.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+</section>
+
+{% endblock %}

@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="auth-section">
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <div class="auth-icon">👤</div>
+                <h1>Create Your Account</h1>
+                <p>Register to discover government schemes tailored to you</p>
+            </div>
+
+            <form action="{{ url_for('main.signup') }}" method="POST" class="auth-form" id="signupForm" novalidate>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="name">Full Name</label>
+                        <input type="text" id="name" name="name" class="form-control" placeholder="Enter your full name"
+                            required />
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" name="email" class="form-control" placeholder="you@example.com"
+                            required />
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <div class="input-wrapper">
+                            <input type="password" id="password" name="password" class="form-control"
+                                placeholder="Min. 6 characters" required minlength="6" />
+                            <button type="button" class="toggle-pw" data-target="password"
+                                aria-label="Show password">👁</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="age">Age</label>
+                        <input type="number" id="age" name="age" class="form-control" placeholder="e.g. 28" min="1"
+                            max="120" required />
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="gender">Gender</label>
+                        <select id="gender" name="gender" class="form-control" required>
+                            <option value="" disabled selected>Select gender</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="community">Community / Category</label>
+                        <select id="community" name="community" class="form-control" required>
+                            <option value="" disabled selected>Select category</option>
+                            <option value="General">General</option>
+                            <option value="OBC">OBC</option>
+                            <option value="SC">SC</option>
+                            <option value="ST">ST</option>
+                            <option value="Minority">Minority</option>
+                            <option value="EWS">EWS</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="occupation">Occupation / User Type</label>
+                        <select id="occupation" name="occupation" class="form-control" required>
+                            <option value="" disabled selected>Select occupation</option>
+                            <option value="Student">Student</option>
+                            <option value="Working Professional">Working Professional</option>
+                            <option value="Government Employee">Government Employee</option>
+                            <option value="Self Employed">Self Employed</option>
+                            <option value="Unemployed">Unemployed</option>
+                            <option value="Senior Citizen">Senior Citizen</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="state">State</label>
+                        <select id="state" name="state" class="form-control" required>
+                            <option value="" disabled selected>Select state</option>
+                            <option>Andhra Pradesh</option>
+                            <option>Arunachal Pradesh</option>
+                            <option>Assam</option>
+                            <option>Bihar</option>
+                            <option>Chhattisgarh</option>
+                            <option>Goa</option>
+                            <option>Gujarat</option>
+                            <option>Haryana</option>
+                            <option>Himachal Pradesh</option>
+                            <option>Jharkhand</option>
+                            <option>Karnataka</option>
+                            <option>Kerala</option>
+                            <option>Madhya Pradesh</option>
+                            <option>Maharashtra</option>
+                            <option>Manipur</option>
+                            <option>Meghalaya</option>
+                            <option>Mizoram</option>
+                            <option>Nagaland</option>
+                            <option>Odisha</option>
+                            <option>Punjab</option>
+                            <option>Rajasthan</option>
+                            <option>Sikkim</option>
+                            <option>Tamil Nadu</option>
+                            <option>Telangana</option>
+                            <option>Tripura</option>
+                            <option>Uttar Pradesh</option>
+                            <option>Uttarakhand</option>
+                            <option>West Bengal</option>
+                            <option>Delhi</option>
+                            <option>Jammu &amp; Kashmir</option>
+                            <option>Ladakh</option>
+                            <option>Chandigarh</option>
+                            <option>Puducherry</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-full">Create Account →</button>
+            </form>
+
+            <div class="auth-footer">
+                Already have an account? <a href="{{ url_for('main.login') }}">Log in here</a>
+            </div>
+        </div>
+
+        <!-- Side illustration panel -->
+        <div class="auth-illustration">
+            <div class="illus-content">
+                <h2>Join Thousands of Citizens</h2>
+                <p>who have already discovered government schemes they qualify for.</p>
+                <ul class="illus-benefits">
+                    <li>✅ 100% Free registration</li>
+                    <li>✅ Instant scheme matching</li>
+                    <li>✅ Secure data protection</li>
+                    <li>✅ All communities covered</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}
