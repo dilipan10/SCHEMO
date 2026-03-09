@@ -165,4 +165,4 @@ When a logged-in user visits their dashboard, the app queries schemes where:
 
 ---
 
-*Built with ❤️ for Indian citizens — Schemo *
+*Built with ❤️ for Indian citizens — Schemo*
