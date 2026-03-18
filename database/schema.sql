@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS users (
     id          INT AUTO_INCREMENT PRIMARY KEY,
     name        VARCHAR(150)    NOT NULL,
     email       VARCHAR(200)    NOT NULL UNIQUE,
+    phone_number VARCHAR(15)    NOT NULL UNIQUE,
     password    VARCHAR(255)    NOT NULL,
     age         INT             NOT NULL,
     gender      ENUM('Male','Female','Other') NOT NULL,
@@ -193,3 +194,7 @@ INSERT INTO schemes (scheme_name, description, eligibility, community, min_age, 
 --
 --   ALTER TABLE users DROP COLUMN income;
 
+-- Optional: Run this to update an existing users table
+-- ALTER TABLE users ADD COLUMN phone_number VARCHAR(15) UNIQUE NOT NULL AFTER email;
+
+-- ============================================================

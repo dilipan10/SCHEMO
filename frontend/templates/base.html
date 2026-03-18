@@ -11,16 +11,18 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
     rel="stylesheet" />
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
 </head>
 
 <body>
 
   <!-- ═══ NAVBAR ═══════════════════════════════════════════════════════ -->
-  <nav class="navbar" id="navbar">
+  <nav class="navbar glass" id="navbar">
     <div class="nav-container">
       <a href="{{ url_for('main.index') }}" class="nav-brand">
-        <span class="brand-icon">🏛</span>
+        <div class="brand-icon-wrap"><i data-lucide="landmark"></i></div>
         <span class="brand-text">Schemo</span>
       </a>
       <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
@@ -34,14 +36,15 @@
         {% if session.get('user_id') %}
         <li><a href="{{ url_for('main.dashboard') }}"
             class="nav-link {% if request.endpoint == 'main.dashboard' %}active{% endif %}">Dashboard</a></li>
-        <li><a href="{{ url_for('main.logout') }}" class="nav-link btn-nav-outline">Logout</a></li>
+        <li><a href="{{ url_for('main.logout') }}" class="nav-link">Logout</a></li>
         {% else %}
         <li><a href="{{ url_for('main.login') }}"
             class="nav-link {% if request.endpoint == 'main.login' %}active{% endif %}">Login</a></li>
-        <li><a href="{{ url_for('main.signup') }}" class="nav-link btn-nav">Sign Up</a></li>
+        <li><a href="{{ url_for('main.signup') }}" class="btn btn-primary btn-sm nav-signup">Sign Up</a></li>
         {% endif %}
         {% if session.get('is_admin') %}
-        <li><a href="{{ url_for('main.admin_dashboard') }}" class="nav-link btn-nav-admin">Admin</a></li>
+        <li><a href="{{ url_for('main.admin_dashboard') }}" class="nav-link nav-admin-badge">
+          <i data-lucide="shield-check" style="width:15px;height:15px;"></i> Admin</a></li>
         {% else %}
         <li><a href="{{ url_for('main.admin_login') }}" class="nav-link nav-admin-link">Admin</a></li>
         {% endif %}
@@ -52,11 +55,19 @@
   <!-- ═══ FLASH MESSAGES ═══════════════════════════════════════════════ -->
   {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
-  <div class="flash-container" id="flashContainer">
+  <div class="toast-container" id="flashContainer">
     {% for category, message in messages %}
-    <div class="flash flash-{{ category }}">
-      <span>{{ message }}</span>
-      <button class="flash-close" onclick="this.parentElement.remove()">✕</button>
+    <div class="toast toast-{{ category }} animate-slide-in">
+      <div style="display:flex; align-items:center; gap:.75rem;">
+        {% if category == 'success' %}<i data-lucide="check-circle-2" style="width:18px;height:18px;flex-shrink:0;"></i>
+        {% elif category == 'danger' %}<i data-lucide="alert-circle" style="width:18px;height:18px;flex-shrink:0;"></i>
+        {% elif category == 'warning' %}<i data-lucide="alert-triangle" style="width:18px;height:18px;flex-shrink:0;"></i>
+        {% else %}<i data-lucide="info" style="width:18px;height:18px;flex-shrink:0;"></i>{% endif %}
+        <span>{{ message }}</span>
+      </div>
+      <button class="toast-close" onclick="this.parentElement.style.opacity=0; setTimeout(()=>this.parentElement.remove(), 300);">
+        <i data-lucide="x"></i>
+      </button>
     </div>
     {% endfor %}
   </div>
@@ -70,30 +81,49 @@
   <footer class="footer">
     <div class="footer-container">
       <div class="footer-brand">
-        <span class="brand-icon">🏛</span>
-        <span class="brand-text">Schemo</span>
-        <p class="footer-tagline">Empowering Citizens, One Scheme at a Time.</p>
+        <div style="display:flex; align-items:center; gap:.65rem; margin-bottom:1rem;">
+          <div class="brand-icon-wrap"><i data-lucide="landmark"></i></div>
+          <span style="font-size:1.35rem; font-weight:800; color:#fff;">Schemo</span>
+        </div>
+        <p class="footer-tagline">Empowering Citizens,<br>One Scheme at a Time.</p>
+        <p style="color:var(--text-dim); font-size:.8rem; margin-top:.75rem;">© 2026 Schemo. All rights reserved.</p>
       </div>
-      <div class="footer-links">
-        <h4>Quick Links</h4>
-        <a href="{{ url_for('main.index') }}">Home</a>
-        <a href="{{ url_for('main.schemes') }}">All Schemes</a>
-        <a href="{{ url_for('main.signup') }}">Register</a>
-        <a href="{{ url_for('main.login') }}">Login</a>
+      <div>
+        <h4 style="font-size:.8rem; font-weight:700; color:#fff; text-transform:uppercase; letter-spacing:.07em; margin-bottom:1.25rem;">Quick Links</h4>
+        <div class="footer-links">
+          <a href="{{ url_for('main.index') }}"><i data-lucide="home" style="width:14px;"></i> Home</a>
+          <a href="{{ url_for('main.schemes') }}"><i data-lucide="list" style="width:14px;"></i> All Schemes</a>
+          <a href="{{ url_for('main.signup') }}"><i data-lucide="user-plus" style="width:14px;"></i> Register</a>
+          <a href="{{ url_for('main.login') }}"><i data-lucide="log-in" style="width:14px;"></i> Login</a>
+        </div>
       </div>
-      <div class="footer-links">
-        <h4>Official Resources</h4>
-        <a href="https://india.gov.in" target="_blank" rel="noopener">India.gov.in ↗</a>
-        <a href="https://scholarships.gov.in" target="_blank" rel="noopener">NSP ↗</a>
-        <a href="https://pmkisan.gov.in" target="_blank" rel="noopener">PM Kisan ↗</a>
+      <div>
+        <h4 style="font-size:.8rem; font-weight:700; color:#fff; text-transform:uppercase; letter-spacing:.07em; margin-bottom:1.25rem;">Official Resources</h4>
+        <div class="footer-links">
+          <a href="https://india.gov.in" target="_blank" rel="noopener"><i data-lucide="globe" style="width:14px;"></i> India.gov.in</a>
+          <a href="https://scholarships.gov.in" target="_blank" rel="noopener"><i data-lucide="graduation-cap" style="width:14px;"></i> NSP Scholarships</a>
+          <a href="https://pmkisan.gov.in" target="_blank" rel="noopener"><i data-lucide="wheat" style="width:14px;"></i> PM Kisan</a>
+        </div>
       </div>
     </div>
     <div class="footer-bottom">
-      <p>&copy; 2024 Schemo. Built with ❤️ for Indian citizens.</p>
+      <p>Built with <i data-lucide="heart" style="width:13px;height:13px;display:inline-block;color:#ef4444;vertical-align:middle;margin:0 2px;"></i> for Indian citizens &nbsp;·&nbsp; Schemo v2.0</p>
     </div>
   </footer>
 
   <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+  <!-- Initialize Lucide Icons -->
+  <script>
+    lucide.createIcons();
+    // Auto dismiss toasts after 5 seconds
+    setTimeout(() => {
+      document.querySelectorAll('.toast').forEach(t => {
+        t.style.transition = 'opacity 0.4s ease';
+        t.style.opacity = '0';
+        setTimeout(() => t.remove(), 400);
+      });
+    }, 5000);
+  </script>
 </body>
 
 </html>

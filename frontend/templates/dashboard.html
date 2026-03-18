@@ -5,50 +5,50 @@
     <div class="container">
 
         <!-- ── Profile Card ── -->
-        <div class="dashboard-header">
-            <div class="profile-card">
-                <div class="profile-avatar">{{ user.name[0].upper() }}</div>
-                <div class="profile-info">
-                    <h1 class="profile-name">{{ user.name }}</h1>
-                    <p class="profile-email">{{ user.email }}</p>
-                    <div class="profile-tags">
-                        <span class="tag tag-community">{{ user.community }}</span>
-                        <span class="tag tag-gender">{{ user.gender }}</span>
-                        <span class="tag tag-state">{{ user.state }}</span>
-                    </div>
+        <div class="profile-card glass">
+            <div class="profile-avatar">{{ user.name[0].upper() }}</div>
+            <div class="profile-info">
+                <h1 class="profile-name">{{ user.name }}</h1>
+                <p style="color:var(--text-muted); margin-bottom:1rem;">{{ user.email }}</p>
+                <div class="profile-tags">
+                    <span class="tag tag-community">{{ user.community }}</span>
+                    <span class="tag tag-gender">{{ user.gender }}</span>
+                    <span class="tag tag-state">📍 {{ user.state }}</span>
                 </div>
-                <a href="{{ url_for('main.logout') }}" class="btn btn-outline btn-sm">Logout</a>
             </div>
+            <a href="{{ url_for('main.logout') }}" class="btn btn-outline btn-sm">
+                <i data-lucide="log-out"></i> Logout
+            </a>
         </div>
 
-        <!-- ── Profile Details ── -->
+        <!-- ── Stat Cards ── -->
         <div class="profile-details-grid">
-            <div class="detail-card">
-                <span class="detail-icon">🎂</span>
+            <div class="detail-card glass">
+                <div class="detail-icon"><i data-lucide="calendar"></i></div>
                 <div>
                     <span class="detail-label">Age</span>
                     <span class="detail-value">{{ user.age }} years</span>
                 </div>
             </div>
-            <div class="detail-card">
-                <span class="detail-icon">💼</span>
+            <div class="detail-card glass">
+                <div class="detail-icon"><i data-lucide="briefcase"></i></div>
                 <div>
                     <span class="detail-label">Occupation</span>
                     <span class="detail-value">{{ user.occupation }}</span>
                 </div>
             </div>
-            <div class="detail-card">
-                <span class="detail-icon">🏠</span>
+            <div class="detail-card glass">
+                <div class="detail-icon"><i data-lucide="map-pin"></i></div>
                 <div>
                     <span class="detail-label">State</span>
                     <span class="detail-value">{{ user.state }}</span>
                 </div>
             </div>
-            <div class="detail-card">
-                <span class="detail-icon">🎯</span>
+            <div class="detail-card glass" style="border-color:rgba(59,130,246,0.3); background:rgba(59,130,246,0.05);">
+                <div class="detail-icon" style="color:var(--primary); background:rgba(59,130,246,0.15);"><i data-lucide="star"></i></div>
                 <div>
                     <span class="detail-label">Eligible Schemes</span>
-                    <span class="detail-value highlight-green">{{ schemes|length }} found</span>
+                    <span class="detail-value" style="color:var(--primary-light);">{{ schemes|length }} found</span>
                 </div>
             </div>
         </div>
@@ -65,19 +65,20 @@
             {% if schemes %}
             <div class="scheme-grid">
                 {% for s in schemes %}
-                <div class="scheme-card" data-community="{{ s.community }}">
+                <div class="scheme-card glass" data-community="{{ s.community }}">
                     <div class="scheme-card-header">
                         <span class="scheme-community-badge">{{ s.community }}</span>
-                        {% if s.deadline %}
-                        <span class="scheme-deadline">📅 {{ s.deadline.strftime('%d %b %Y') if
-                            s.deadline.__class__.__name__ != 'str' else s.deadline }}</span>
+                        {% if s.status == 'Expired' %}
+                        <span style="font-size:.8rem; font-weight:700; color:#EF4444; background:rgba(239,68,68,0.1); padding:.3rem .75rem; border-radius:99px; border:1px solid rgba(239,68,68,0.2);">🔴 Expired</span>
+                        {% elif s.deadline %}
+                        <span style="font-size:.8rem; font-weight:600; color:var(--text-muted);">📅 {{ s.deadline.strftime('%d %b %Y') if s.deadline.__class__.__name__ != 'str' else s.deadline }}</span>
                         {% else %}
-                        <span class="scheme-deadline scheme-deadline--ongoing">🟢 Ongoing</span>
+                        <span style="font-size:.8rem; font-weight:600; color:#10B981;">🟢 Ongoing</span>
                         {% endif %}
                     </div>
+
                     <h3 class="scheme-card-title">{{ s.scheme_name }}</h3>
-                    <p class="scheme-card-desc">{{ s.description[:160] }}{% if s.description|length > 160 %}…{% endif %}
-                    </p>
+                    <p class="scheme-card-desc">{{ s.description[:160] }}{% if s.description|length > 160 %}…{% endif %}</p>
 
                     <div class="scheme-card-meta">
                         <div class="meta-item">
@@ -86,33 +87,55 @@
                         </div>
                         <div class="meta-item">
                             <span class="meta-label">Max Income</span>
-                            <span class="meta-value">{% if s.max_income >= 99999999 %}No limit{% else %}₹{{
-                                "{:,.0f}".format(s.max_income) }}{% endif %}</span>
+                            <span class="meta-value">{% if s.max_income >= 99999999 %}No limit{% else %}₹{{ "{:,.0f}".format(s.max_income) }}{% endif %}</span>
                         </div>
                     </div>
 
                     <details class="scheme-details">
                         <summary>View Full Details</summary>
                         <div class="scheme-detail-body">
-                            <h4>🎁 Benefits</h4>
-                            <p>{{ s.benefits }}</p>
-                            <h4>✅ Eligibility</h4>
-                            <p>{{ s.eligibility }}</p>
-                            <h4>📄 Documents Required</h4>
-                            <p>{{ s.documents_required }}</p>
+                            <div>
+                                <h4><i data-lucide="gift" style="width:14px;"></i> Benefits</h4>
+                                <p>{{ s.benefits }}</p>
+                            </div>
+                            <div>
+                                <h4><i data-lucide="check-circle" style="width:14px;"></i> Eligibility</h4>
+                                <p>{{ s.eligibility }}</p>
+                            </div>
+                            <div>
+                                <h4><i data-lucide="file-text" style="width:14px;"></i> Documents Required</h4>
+                                <p>{{ s.documents_required }}</p>
+                            </div>
+                            <div style="padding-top: 1rem; border-top: 1px solid var(--glass-border);">
+                                <h4><i data-lucide="calendar" style="width:14px;"></i> Deadline</h4>
+                                {% if s.status == 'Expired' %}
+                                <p style="color:#EF4444; font-weight:700;">❌ Expired ({{ s.deadline.strftime('%d %b %Y') if s.deadline.__class__.__name__ != 'str' else s.deadline }})</p>
+                                {% elif s.deadline %}
+                                <p style="color:#10B981; font-weight:700;">⏳ Apply before: {{ s.deadline.strftime('%d %b %Y') if s.deadline.__class__.__name__ != 'str' else s.deadline }}</p>
+                                {% else %}
+                                <p style="color:#10B981; font-weight:700;">🟢 Ongoing Scheme</p>
+                                {% endif %}
+                            </div>
                         </div>
                     </details>
 
+                    {% if s.status == 'Expired' %}
+                    <button class="btn btn-full mt-1" disabled
+                        style="cursor:not-allowed; opacity:0.5; background:var(--bg-card2); color:var(--text-muted); border:1px solid var(--glass-border);">
+                        <i data-lucide="x-circle"></i> Applications Closed
+                    </button>
+                    {% else %}
                     <a href="{{ s.official_link }}" target="_blank" rel="noopener"
-                        class="btn btn-primary btn-sm btn-full mt-1">
-                        Apply on Official Portal ↗
+                        class="btn btn-primary btn-full mt-1">
+                        Apply on Official Portal <i data-lucide="external-link"></i>
                     </a>
+                    {% endif %}
                 </div>
                 {% endfor %}
             </div>
             {% else %}
             <div class="empty-state">
-                <div class="empty-icon">🔍</div>
+                <i data-lucide="frown" class="empty-icon"></i>
                 <h3>No schemes found matching your profile</h3>
                 <p>Our admin team regularly updates and adds more schemes. Check back soon!</p>
                 <a href="{{ url_for('main.schemes') }}" class="btn btn-outline">Browse All Schemes</a>

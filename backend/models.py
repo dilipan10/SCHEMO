@@ -10,14 +10,14 @@ from database import execute_query
 #  USER MODEL
 # ═══════════════════════════════════════════════════════════════
 
-def create_user(name, email, password, age, gender, community, occupation, state):
+def create_user(name, email, phone_number, password, age, gender, community, occupation, state):
     """Insert a new user. Returns new user id."""
     hashed = generate_password_hash(password)
     sql = """
-        INSERT INTO users (name, email, password, age, gender, community, occupation, state)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO users (name, email, phone_number, password, age, gender, community, occupation, state)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
-    return execute_query(sql, (name, email, hashed, age, gender, community, occupation, state))
+    return execute_query(sql, (name, email, phone_number, hashed, age, gender, community, occupation, state))
 
 
 def get_user_by_email(email):
@@ -41,7 +41,7 @@ def verify_user_password(user, raw_password):
 
 def get_all_users():
     """Return list of all registered users (no passwords)."""
-    sql = "SELECT id, name, email, age, gender, community, occupation, state, created_at FROM users ORDER BY created_at DESC"
+    sql = "SELECT id, name, email, phone_number, age, gender, community, occupation, state, created_at FROM users ORDER BY created_at DESC"
     return execute_query(sql, fetch=True)
 
 
@@ -143,3 +143,4 @@ def create_admin(username, password):
         return True
     except Exception:
         return False   # already exists
+

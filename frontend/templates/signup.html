@@ -1,147 +1,260 @@
 {% extends "base.html" %}
 {% block content %}
 
-<section class="auth-section">
-    <div class="auth-container">
-        <div class="auth-card">
-            <div class="auth-header">
-                <div class="auth-icon">👤</div>
-                <h1>Create Your Account</h1>
-                <p>Register to discover government schemes tailored to you</p>
+<section class="auth-section" style="padding: 5rem 1.5rem 3rem; min-height: 100vh; align-items: flex-start;">
+    <div style="max-width: 1100px; margin: 0 auto; width: 100%; display: grid; grid-template-columns: 1fr 1.6fr; gap: 3rem; align-items: start;">
+
+        <!-- ═══ LEFT INFO PANEL ════════════════════ -->
+        <div class="auth-illustration glass" style="position: sticky; top: 6rem; border-radius: 20px; padding: 3rem 2.5rem; min-height: unset;">
+            <div style="margin-bottom: 2rem;">
+                <div style="display:flex; align-items:center; gap:.75rem; margin-bottom:1.5rem;">
+                    <div style="width:42px; height:42px; background:linear-gradient(135deg,var(--primary),var(--accent)); border-radius:10px; display:flex; align-items:center; justify-content:center;">
+                        <i data-lucide="landmark" style="color:#fff; width:22px; height:22px;"></i>
+                    </div>
+                    <span style="font-size:1.4rem; font-weight:800; background:linear-gradient(135deg,var(--primary-light),var(--accent-light)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">Schemo</span>
+                </div>
+                <h2 style="font-size:1.75rem; font-weight:800; color:#fff; line-height:1.3; margin-bottom:.75rem;">
+                    Unlock Your Government Benefits
+                </h2>
+                <p style="color:var(--text-muted); font-size:.95rem; line-height:1.7;">
+                    Join thousands of Indian citizens who discovered welfare schemes they were eligible for — completely free.
+                </p>
+            </div>
+
+            <!-- Benefit Items -->
+            <ul style="list-style:none; display:flex; flex-direction:column; gap:1rem; margin:0; padding:0;">
+                <li style="display:flex; align-items:flex-start; gap:.85rem;">
+                    <div style="width:36px; height:36px; border-radius:8px; background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.2); flex-shrink:0; display:flex; align-items:center; justify-content:center;">
+                        <i data-lucide="zap" style="color:#10B981; width:16px; height:16px;"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight:700; color:#fff; font-size:.95rem;">Instant Scheme Matching</div>
+                        <div style="color:var(--text-muted); font-size:.85rem;">Get matched to relevant schemes based on your profile automatically.</div>
+                    </div>
+                </li>
+                <li style="display:flex; align-items:flex-start; gap:.85rem;">
+                    <div style="width:36px; height:36px; border-radius:8px; background:rgba(59,130,246,0.12); border:1px solid rgba(59,130,246,0.2); flex-shrink:0; display:flex; align-items:center; justify-content:center;">
+                        <i data-lucide="calendar-clock" style="color:var(--primary-light); width:16px; height:16px;"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight:700; color:#fff; font-size:.95rem;">Deadline Tracking</div>
+                        <div style="color:var(--text-muted); font-size:.85rem;">Never miss an application deadline with clear status indicators.</div>
+                    </div>
+                </li>
+                <li style="display:flex; align-items:flex-start; gap:.85rem;">
+                    <div style="width:36px; height:36px; border-radius:8px; background:rgba(139,92,246,0.12); border:1px solid rgba(139,92,246,0.2); flex-shrink:0; display:flex; align-items:center; justify-content:center;">
+                        <i data-lucide="shield-check" style="color:var(--accent-light); width:16px; height:16px;"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight:700; color:#fff; font-size:.95rem;">100% Secure & Private</div>
+                        <div style="color:var(--text-muted); font-size:.85rem;">Your data is encrypted and never shared with third parties.</div>
+                    </div>
+                </li>
+                <li style="display:flex; align-items:flex-start; gap:.85rem;">
+                    <div style="width:36px; height:36px; border-radius:8px; background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.2); flex-shrink:0; display:flex; align-items:center; justify-content:center;">
+                        <i data-lucide="indian-rupee" style="color:var(--warning); width:16px; height:16px;"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight:700; color:#fff; font-size:.95rem;">Completely Free</div>
+                        <div style="color:var(--text-muted); font-size:.85rem;">No fees, no subscriptions — always 100% free for all citizens.</div>
+                    </div>
+                </li>
+            </ul>
+
+            <!-- Divider -->
+            <div style="border-top:1px solid var(--glass-border); margin: 2rem 0;"></div>
+
+            <div style="display:flex; gap:2rem;">
+                <div style="text-align:center;">
+                    <div style="font-size:1.75rem; font-weight:800; color:#fff;">12+</div>
+                    <div style="font-size:.75rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:.05em;">Active Schemes</div>
+                </div>
+                <div style="text-align:center;">
+                    <div style="font-size:1.75rem; font-weight:800; color:#fff;">8</div>
+                    <div style="font-size:.75rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:.05em;">Communities</div>
+                </div>
+                <div style="text-align:center;">
+                    <div style="font-size:1.75rem; font-weight:800; color:#fff;">28+</div>
+                    <div style="font-size:.75rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:.05em;">States</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══ RIGHT FORM PANEL ═══════════════════ -->
+        <div class="auth-card glass" style="border-radius:20px; padding:2.75rem;">
+
+            <!-- Header -->
+            <div style="margin-bottom:2.25rem;">
+                <div style="display:inline-flex; align-items:center; gap:.5rem; background:rgba(59,130,246,0.1); border:1px solid rgba(59,130,246,0.2); padding:.35rem 1rem; border-radius:99px; font-size:.8rem; font-weight:600; color:var(--primary-light); margin-bottom:1.25rem;">
+                    <i data-lucide="user-plus" style="width:14px; height:14px;"></i> Create Your Account
+                </div>
+                <h1 style="font-size:1.9rem; font-weight:800; color:#fff; letter-spacing:-.02em; margin-bottom:.4rem;">Register on Schemo</h1>
+                <p style="color:var(--text-muted); font-size:.95rem;">Fill in your details to discover eligible government schemes.</p>
             </div>
 
             <form action="{{ url_for('main.signup') }}" method="POST" class="auth-form" id="signupForm" novalidate>
+
                 <div class="form-row">
                     <div class="form-group">
                         <label for="name">Full Name</label>
-                        <input type="text" id="name" name="name" class="form-control" placeholder="Enter your full name"
-                            required />
+                        <input type="text" id="name" name="name" class="form-control" required placeholder="Enter your full name">
                     </div>
                     <div class="form-group">
                         <label for="email">Email Address</label>
-                        <input type="email" id="email" name="email" class="form-control" placeholder="you@example.com"
-                            required />
+                        <input type="email" id="email" name="email" class="form-control" required placeholder="Enter your email address">
                     </div>
                 </div>
 
                 <div class="form-row">
+                    <div class="form-group">
+                        <label for="phone_number">Phone Number</label>
+                        <input type="tel" id="phone_number" name="phone_number" class="form-control" required pattern="[0-9]{10}" placeholder="Enter 10-digit mobile number" title="Please enter exactly 10 digits">
+                    </div>
                     <div class="form-group">
                         <label for="password">Password</label>
                         <div class="input-wrapper">
-                            <input type="password" id="password" name="password" class="form-control"
-                                placeholder="Min. 6 characters" required minlength="6" />
-                            <button type="button" class="toggle-pw" data-target="password"
-                                aria-label="Show password">👁</button>
+                            <input type="password" id="password" name="password" class="form-control" required placeholder="Create a password">
+                            <button type="button" class="toggle-pw" onclick="togglePassword('password')">
+                                <i data-lucide="eye"></i>
+                            </button>
                         </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="age">Age</label>
-                        <input type="number" id="age" name="age" class="form-control" placeholder="e.g. 28" min="1"
-                            max="120" required />
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
+                        <label for="age">Age</label>
+                        <input type="number" id="age" name="age" class="form-control" required min="1" max="120" placeholder="Ex: 25">
+                    </div>
+                    <div class="form-group">
                         <label for="gender">Gender</label>
                         <select id="gender" name="gender" class="form-control" required>
-                            <option value="" disabled selected>Select gender</option>
+                            <option value="" disabled selected>Select Gender</option>
                             <option value="Male">Male</option>
                             <option value="Female">Female</option>
                             <option value="Other">Other</option>
                         </select>
                     </div>
-                    <div class="form-group">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group" style="grid-column: 1 / -1;">
                         <label for="community">Community / Category</label>
                         <select id="community" name="community" class="form-control" required>
-                            <option value="" disabled selected>Select category</option>
+                            <option value="" disabled selected>Select your category</option>
                             <option value="General">General</option>
-                            <option value="OBC">OBC</option>
-                            <option value="SC">SC</option>
-                            <option value="ST">ST</option>
+                            <option value="OBC">OBC (Other Backward Class)</option>
+                            <option value="SC">SC (Scheduled Caste)</option>
+                            <option value="ST">ST (Scheduled Tribe)</option>
                             <option value="Minority">Minority</option>
-                            <option value="EWS">EWS</option>
+                            <option value="EWS">EWS (Economically Weaker Section)</option>
                         </select>
                     </div>
                 </div>
 
                 <div class="form-row">
-                    <div class="form-group">
+                    <div class="form-group" style="grid-column: 1 / -1;">
                         <label for="occupation">Occupation / User Type</label>
                         <select id="occupation" name="occupation" class="form-control" required>
-                            <option value="" disabled selected>Select occupation</option>
-                            <option value="Student">Student</option>
-                            <option value="Working Professional">Working Professional</option>
-                            <option value="Government Employee">Government Employee</option>
+                            <option value="" disabled selected>Select your occupation</option>
+                            <option value="Student">Student (School / College / University)</option>
+                            <option value="Farmer">Farmer / Agricultural Worker</option>
+                            <option value="Unemployed">Unemployed / Job Seeker</option>
+                            <option value="Business Owner">Business Owner / Entrepreneur</option>
+                            <option value="Salaried Employee">Salaried Employee (Govt / Private)</option>
                             <option value="Self Employed">Self Employed</option>
-                            <option value="Unemployed">Unemployed</option>
-                            <option value="Senior Citizen">Senior Citizen</option>
+                            <option value="Senior Citizen">Senior Citizen / Retired</option>
+                            <option value="Women (General)">Women (General / Homemaker)</option>
                             <option value="Other">Other</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="state">State</label>
-                        <select id="state" name="state" class="form-control" required>
-                            <option value="" disabled selected>Select state</option>
-                            <option>Andhra Pradesh</option>
-                            <option>Arunachal Pradesh</option>
-                            <option>Assam</option>
-                            <option>Bihar</option>
-                            <option>Chhattisgarh</option>
-                            <option>Goa</option>
-                            <option>Gujarat</option>
-                            <option>Haryana</option>
-                            <option>Himachal Pradesh</option>
-                            <option>Jharkhand</option>
-                            <option>Karnataka</option>
-                            <option>Kerala</option>
-                            <option>Madhya Pradesh</option>
-                            <option>Maharashtra</option>
-                            <option>Manipur</option>
-                            <option>Meghalaya</option>
-                            <option>Mizoram</option>
-                            <option>Nagaland</option>
-                            <option>Odisha</option>
-                            <option>Punjab</option>
-                            <option>Rajasthan</option>
-                            <option>Sikkim</option>
-                            <option>Tamil Nadu</option>
-                            <option>Telangana</option>
-                            <option>Tripura</option>
-                            <option>Uttar Pradesh</option>
-                            <option>Uttarakhand</option>
-                            <option>West Bengal</option>
-                            <option>Delhi</option>
-                            <option>Jammu &amp; Kashmir</option>
-                            <option>Ladakh</option>
-                            <option>Chandigarh</option>
-                            <option>Puducherry</option>
                         </select>
                     </div>
                 </div>
 
-                <button type="submit" class="btn btn-primary btn-full">Create Account →</button>
+                <div class="form-row">
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label for="state">State / Union Territory</label>
+                        <select id="state" name="state" class="form-control" required>
+                            <option value="" disabled selected>Select your state</option>
+                            <optgroup label="States">
+                                <option>Andhra Pradesh</option>
+                                <option>Arunachal Pradesh</option>
+                                <option>Assam</option>
+                                <option>Bihar</option>
+                                <option>Chhattisgarh</option>
+                                <option>Goa</option>
+                                <option>Gujarat</option>
+                                <option>Haryana</option>
+                                <option>Himachal Pradesh</option>
+                                <option>Jharkhand</option>
+                                <option>Karnataka</option>
+                                <option>Kerala</option>
+                                <option>Madhya Pradesh</option>
+                                <option>Maharashtra</option>
+                                <option>Manipur</option>
+                                <option>Meghalaya</option>
+                                <option>Mizoram</option>
+                                <option>Nagaland</option>
+                                <option>Odisha</option>
+                                <option>Punjab</option>
+                                <option>Rajasthan</option>
+                                <option>Sikkim</option>
+                                <option>Tamil Nadu</option>
+                                <option>Telangana</option>
+                                <option>Tripura</option>
+                                <option>Uttar Pradesh</option>
+                                <option>Uttarakhand</option>
+                                <option>West Bengal</option>
+                            </optgroup>
+                            <optgroup label="Union Territories">
+                                <option>Delhi</option>
+                                <option>Jammu &amp; Kashmir</option>
+                                <option>Ladakh</option>
+                                <option>Chandigarh</option>
+                                <option>Puducherry</option>
+                                <option>Andaman and Nicobar Islands</option>
+                                <option>Dadra and Nagar Haveli</option>
+                                <option>Daman and Diu</option>
+                                <option>Lakshadweep</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Submit -->
+                <button type="submit" class="btn btn-primary btn-full" style="margin-top:1.25rem; padding:1rem; font-size:1rem; letter-spacing:.01em;">
+                    <i data-lucide="check-circle-2"></i> Create My Account
+                </button>
+
+                <p style="text-align:center; color:var(--text-dim); font-size:.8rem; margin-top:1rem;">
+                    By creating an account, you agree to our terms of service.
+                </p>
+
             </form>
 
-            <div class="auth-footer">
-                Already have an account? <a href="{{ url_for('main.login') }}">Log in here</a>
+            <div class="auth-footer" style="border-top:1px solid var(--glass-border); padding-top:1.5rem; margin-top:1.5rem;">
+                Already have an account?
+                <a href="{{ url_for('main.login') }}" style="font-weight:700; color:var(--primary-light);">
+                    <i data-lucide="log-in" style="width:14px; height:14px; display:inline-block; margin-right:2px;"></i> Log in here
+                </a>
             </div>
         </div>
 
-        <!-- Side illustration panel -->
-        <div class="auth-illustration">
-            <div class="illus-content">
-                <h2>Join Thousands of Citizens</h2>
-                <p>who have already discovered government schemes they qualify for.</p>
-                <ul class="illus-benefits">
-                    <li>✅ 100% Free registration</li>
-                    <li>✅ Instant scheme matching</li>
-                    <li>✅ Secure data protection</li>
-                    <li>✅ All communities covered</li>
-                </ul>
-            </div>
-        </div>
     </div>
 </section>
+
+<script>
+    function togglePassword(inputId) {
+        const input = document.getElementById(inputId);
+        const icon = input.nextElementSibling.querySelector('i');
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.setAttribute('data-lucide', 'eye-off');
+        } else {
+            input.type = 'password';
+            icon.setAttribute('data-lucide', 'eye');
+        }
+        lucide.createIcons();
+    }
+</script>
 
 {% endblock %}

@@ -6,7 +6,11 @@
 const navbar = document.getElementById('navbar');
 if (navbar) {
   window.addEventListener('scroll', () => {
-    navbar.classList.toggle('scrolled', window.scrollY > 20);
+    if (window.scrollY > 20) {
+      navbar.style.boxShadow = '0 4px 30px rgba(0,0,0,0.4)';
+    } else {
+      navbar.style.boxShadow = 'none';
+    }
   });
 }
 
@@ -24,40 +28,14 @@ if (navToggle && navLinks) {
   });
 }
 
-/* ── Flash messages: auto-hide after 5s ──────────────────────── */
-const flashContainer = document.getElementById('flashContainer');
-if (flashContainer) {
-  setTimeout(() => {
-    flashContainer.querySelectorAll('.flash').forEach((f) => {
-      f.style.transition = 'opacity .5s';
-      f.style.opacity = '0';
-      setTimeout(() => f.remove(), 500);
-    });
-  }, 5000);
-}
-
-/* ── Password visibility toggle ─────────────────────────────── */
-document.querySelectorAll('.toggle-pw').forEach((btn) => {
-  btn.addEventListener('click', () => {
-    const targetId = btn.dataset.target;
-    const input = document.getElementById(targetId);
-    if (!input) return;
-    const isText = input.type === 'text';
-    input.type = isText ? 'password' : 'text';
-    btn.textContent = isText ? '👁' : '🙈';
-  });
-});
-
 /* ── Admin sidebar tab switching ────────────────────────────── */
 const sidebarLinks = document.querySelectorAll('.sidebar-link[data-tab]');
 sidebarLinks.forEach((link) => {
   link.addEventListener('click', (e) => {
     e.preventDefault();
     const tab = link.dataset.tab;
-    // Switch active link
     sidebarLinks.forEach((l) => l.classList.remove('active'));
     link.classList.add('active');
-    // Switch panel visibility
     document.querySelectorAll('.admin-tab-panel').forEach((panel) => {
       panel.style.display = 'none';
     });
@@ -89,10 +67,8 @@ function filterSchemes() {
   const q = schemeSearch ? schemeSearch.value.toLowerCase().trim() : '';
   const comm = communityFilter ? communityFilter.value.toLowerCase().trim() : '';
 
-  const cards = allSchemesGrid.querySelectorAll('.scheme-card');
   let visible = 0;
-
-  cards.forEach((card) => {
+  allSchemesGrid.querySelectorAll('.scheme-card').forEach((card) => {
     const name = (card.dataset.name || '').toLowerCase();
     const community = (card.dataset.community || '').toLowerCase();
     const textMatch = !q || name.includes(q) || card.textContent.toLowerCase().includes(q);
@@ -115,7 +91,13 @@ if (signupForm) {
     const password = document.getElementById('password');
     const age = document.getElementById('age');
     const income = document.getElementById('income');
+    const phone = document.getElementById('phone_number');
 
+    if (phone && !/^\d{10}$/.test(phone.value.trim())) {
+      e.preventDefault();
+      showError(phone, 'Phone number must be exactly 10 digits.');
+      return;
+    }
     if (password && password.value.length < 6) {
       e.preventDefault();
       showError(password, 'Password must be at least 6 characters.');
@@ -135,24 +117,26 @@ if (signupForm) {
 }
 
 function showError(input, message) {
-  input.style.borderColor = '#e03131';
+  input.style.borderColor = '#EF4444';
+  input.style.boxShadow = '0 0 0 3px rgba(239,68,68,0.2)';
   let err = input.parentElement.querySelector('.field-error');
   if (!err) {
     err = document.createElement('small');
     err.className = 'field-error';
-    err.style.cssText = 'color:#ffa8a8;font-size:.75rem;margin-top:.2rem;display:block;';
+    err.style.cssText = 'color:#F87171; font-size:.8rem; margin-top:.3rem; display:block;';
     input.parentElement.appendChild(err);
   }
   err.textContent = message;
   input.focus();
   input.addEventListener('input', () => {
     input.style.borderColor = '';
-    err.remove();
+    input.style.boxShadow = '';
+    if (err.parentNode) err.remove();
   }, { once: true });
 }
 
-/* ── Scroll reveal animation ──────────────────────────────── */
-const revealEls = document.querySelectorAll('.step-card, .feature-card, .scheme-card, .detail-card');
+/* ── Smooth scroll reveal animations ─────────────────────────── */
+const revealEls = document.querySelectorAll('.step-card, .feature-card, .scheme-card, .detail-card, .profile-card');
 if ('IntersectionObserver' in window && revealEls.length) {
   const observer = new IntersectionObserver(
     (entries) => {
@@ -164,12 +148,12 @@ if ('IntersectionObserver' in window && revealEls.length) {
         }
       });
     },
-    { threshold: 0.12 }
+    { threshold: 0.08 }
   );
-  revealEls.forEach((el) => {
+  revealEls.forEach((el, i) => {
     el.style.opacity = '0';
-    el.style.transform = 'translateY(20px)';
-    el.style.transition = 'opacity .5s ease, transform .5s ease';
+    el.style.transform = 'translateY(24px)';
+    el.style.transition = `opacity 0.5s ease ${i * 0.06}s, transform 0.5s ease ${i * 0.06}s`;
     observer.observe(el);
   });
 }

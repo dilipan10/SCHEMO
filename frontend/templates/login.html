@@ -3,18 +3,20 @@
 
 <section class="auth-section">
     <div class="auth-container auth-container--login">
-        <div class="auth-card">
+
+        <!-- Form Panel (Left) -->
+        <div class="auth-card glass">
             <div class="auth-header">
-                <div class="auth-icon">🔑</div>
+                <i data-lucide="log-in" class="auth-icon"></i>
                 <h1>Welcome Back</h1>
-                <p>Login to access your personalized scheme dashboard</p>
+                <p>Login to access your personalized scheme dashboard.</p>
             </div>
 
             <form action="{{ url_for('main.login') }}" method="POST" class="auth-form" id="loginForm">
                 <div class="form-group">
                     <label for="email">Email Address</label>
-                    <input type="email" id="email" name="email" class="form-control" placeholder="you@example.com"
-                        required autofocus />
+                    <input type="email" id="email" name="email" class="form-control"
+                        placeholder="you@example.com" required autofocus />
                 </div>
 
                 <div class="form-group">
@@ -22,12 +24,15 @@
                     <div class="input-wrapper">
                         <input type="password" id="password" name="password" class="form-control"
                             placeholder="Enter your password" required />
-                        <button type="button" class="toggle-pw" data-target="password"
-                            aria-label="Show password">👁</button>
+                        <button type="button" class="toggle-pw" onclick="togglePassword('password')" aria-label="Show password">
+                            <i data-lucide="eye"></i>
+                        </button>
                     </div>
                 </div>
 
-                <button type="submit" class="btn btn-primary btn-full">Login →</button>
+                <button type="submit" class="btn btn-primary btn-full btn-lg" style="margin-top:0.5rem;">
+                    Login <i data-lucide="arrow-right"></i>
+                </button>
             </form>
 
             <div class="auth-footer">
@@ -35,27 +40,36 @@
             </div>
         </div>
 
-        <div class="auth-illustration auth-illustration--login">
+        <!-- Illustration Panel (Right) -->
+        <div class="auth-illustration">
             <div class="illus-content">
-                <h2>Your Benefits Await</h2>
+                <h2>Your Benefits <span class="text-gradient">Await</span></h2>
                 <p>Log in and instantly discover which government schemes you qualify for.</p>
-                <div class="login-features">
-                    <div class="login-feat">
-                        <span class="feat-icon">📋</span>
-                        <span>Personalized scheme dashboard</span>
-                    </div>
-                    <div class="login-feat">
-                        <span class="feat-icon">🎯</span>
-                        <span>Eligibility-based filtering</span>
-                    </div>
-                    <div class="login-feat">
-                        <span class="feat-icon">📎</span>
-                        <span>Document checklists included</span>
-                    </div>
-                </div>
+                <ul class="illus-benefits">
+                    <li><i data-lucide="layout-dashboard"></i> Personalized scheme dashboard</li>
+                    <li><i data-lucide="target"></i> Eligibility-based filtering</li>
+                    <li><i data-lucide="file-check"></i> Document checklists included</li>
+                    <li><i data-lucide="calendar-clock"></i> Deadline tracking & alerts</li>
+                </ul>
             </div>
         </div>
+
     </div>
 </section>
+
+<script>
+    function togglePassword(inputId) {
+        const input = document.getElementById(inputId);
+        const icon = input.nextElementSibling.querySelector('i');
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.setAttribute('data-lucide', 'eye-off');
+        } else {
+            input.type = 'password';
+            icon.setAttribute('data-lucide', 'eye');
+        }
+        lucide.createIcons();
+    }
+</script>
 
 {% endblock %}

@@ -1,24 +1,30 @@
 {% extends "base.html" %}
 {% block content %}
 
-<section class="page-hero">
+<section class="page-hero" style="text-align:center; padding: 7.5rem 0 3.5rem;">
     <div class="container">
-        <h1 class="page-hero-title">Government Schemes</h1>
-        <p class="page-hero-sub">Explore all available schemes. <a href="{{ url_for('main.signup') }}">Sign up</a> to
-            see which ones you're eligible for.</p>
+        <div class="hero-badge" style="margin-bottom:1.25rem;"><i data-lucide="list-checks" style="width:16px;height:16px;"></i> All Government Schemes</div>
+        <h1 class="page-hero-title">Discover <span class="text-gradient">Government Schemes</span></h1>
+        <p style="color:var(--text-muted); font-size:1.05rem; margin-top:.85rem; max-width:550px; margin-left:auto; margin-right:auto;">
+            Explore all available schemes. <a href="{{ url_for('main.signup') }}" style="color:var(--primary-light); font-weight:600;">Sign up</a> to
+            see which ones you're eligible for.
+        </p>
     </div>
 </section>
 
-<section class="section">
+<section class="section" style="padding-top:3rem;">
     <div class="container">
 
-        <!-- ── Filter bar ── -->
+        <!-- Filter bar -->
         <div class="filter-bar">
+            <i data-lucide="search" style="color:var(--text-muted); flex-shrink:0;"></i>
             <input type="text" id="schemeSearch" class="form-control search-input"
-                placeholder="🔍  Search by scheme name or keyword…" />
-            <select id="communityFilter" class="form-control filter-select">
+                style="background:transparent; border:none; flex:1; padding:0;"
+                placeholder="Search by scheme name or keyword…" />
+            <div style="width:1px; height:28px; background:var(--glass-border);"></div>
+            <select id="communityFilter" class="form-control filter-select"
+                style="background:transparent; border:none; max-width:180px;">
                 <option value="">All Communities</option>
-                <option value="All">All</option>
                 <option value="General">General</option>
                 <option value="OBC">OBC</option>
                 <option value="SC">SC</option>
@@ -31,14 +37,15 @@
         <div class="scheme-grid" id="allSchemesGrid">
             {% if schemes %}
             {% for s in schemes %}
-            <div class="scheme-card" data-community="{{ s.community }}" data-name="{{ s.scheme_name|lower }}">
+            <div class="scheme-card glass" data-community="{{ s.community }}" data-name="{{ s.scheme_name|lower }}">
                 <div class="scheme-card-header">
                     <span class="scheme-community-badge">{{ s.community }}</span>
-                    {% if s.deadline %}
-                    <span class="scheme-deadline">📅 {{ s.deadline.strftime('%d %b %Y') if s.deadline.__class__.__name__
-                        != 'str' else s.deadline }}</span>
+                    {% if s.status == 'Expired' %}
+                    <span style="font-size:.8rem; font-weight:700; color:#EF4444; background:rgba(239,68,68,0.1); padding:.3rem .75rem; border-radius:99px; border:1px solid rgba(239,68,68,0.2);">🔴 Expired</span>
+                    {% elif s.deadline %}
+                    <span style="font-size:.8rem; font-weight:600; color:var(--text-muted);">📅 {{ s.deadline.strftime('%d %b %Y') if s.deadline.__class__.__name__ != 'str' else s.deadline }}</span>
                     {% else %}
-                    <span class="scheme-deadline scheme-deadline--ongoing">🟢 Ongoing</span>
+                    <span style="font-size:.8rem; font-weight:600; color:#10B981;">🟢 Ongoing</span>
                     {% endif %}
                 </div>
 
@@ -47,35 +54,59 @@
 
                 <div class="scheme-card-meta">
                     <div class="meta-item">
-                        <span class="meta-label">Age</span>
+                        <span class="meta-label">Age Range</span>
                         <span class="meta-value">{{ s.min_age }}–{{ s.max_age }} yrs</span>
                     </div>
                     <div class="meta-item">
                         <span class="meta-label">Max Income</span>
-                        <span class="meta-value">{% if s.max_income >= 99999999 %}No limit{% else %}₹{{
-                            "{:,.0f}".format(s.max_income) }}{% endif %}</span>
+                        <span class="meta-value">{% if s.max_income >= 99999999 %}No limit{% else %}₹{{ "{:,.0f}".format(s.max_income) }}{% endif %}</span>
                     </div>
                 </div>
 
                 <details class="scheme-details">
                     <summary>View Full Details</summary>
                     <div class="scheme-detail-body">
-                        <h4>🎁 Benefits</h4>
-                        <p>{{ s.benefits }}</p>
-                        <h4>✅ Eligibility</h4>
-                        <p>{{ s.eligibility }}</p>
-                        <h4>📄 Documents Required</h4>
-                        <p>{{ s.documents_required }}</p>
+                        <div>
+                            <h4><i data-lucide="gift" style="width:14px;"></i> Benefits</h4>
+                            <p>{{ s.benefits }}</p>
+                        </div>
+                        <div>
+                            <h4><i data-lucide="check-circle" style="width:14px;"></i> Eligibility</h4>
+                            <p>{{ s.eligibility }}</p>
+                        </div>
+                        <div>
+                            <h4><i data-lucide="file-text" style="width:14px;"></i> Documents Required</h4>
+                            <p>{{ s.documents_required }}</p>
+                        </div>
+                        <div style="padding-top: 1rem; border-top: 1px solid var(--glass-border);">
+                            <h4><i data-lucide="calendar" style="width:14px;"></i> Deadline</h4>
+                            {% if s.status == 'Expired' %}
+                            <p style="color:#EF4444; font-weight:700;">❌ Expired ({{ s.deadline.strftime('%d %b %Y') if s.deadline.__class__.__name__ != 'str' else s.deadline }})</p>
+                            {% elif s.deadline %}
+                            <p style="color:#10B981; font-weight:700;">⏳ Apply before: {{ s.deadline.strftime('%d %b %Y') if s.deadline.__class__.__name__ != 'str' else s.deadline }}</p>
+                            {% else %}
+                            <p style="color:#10B981; font-weight:700;">🟢 Ongoing Scheme</p>
+                            {% endif %}
+                        </div>
                     </div>
                 </details>
 
+                {% if s.status == 'Expired' %}
+                <button class="btn btn-full mt-1" disabled
+                    style="cursor:not-allowed; opacity:0.5; background:var(--bg-card2); color:var(--text-muted); border:1px solid var(--glass-border);">
+                    <i data-lucide="x-circle"></i> Applications Closed
+                </button>
+                {% else %}
                 <a href="{{ s.official_link }}" target="_blank" rel="noopener"
-                    class="btn btn-primary btn-sm btn-full mt-1">Apply on Official Portal ↗</a>
+                    class="btn btn-primary btn-full mt-1">
+                    Apply on Official Portal <i data-lucide="external-link"></i>
+                </a>
+                {% endif %}
             </div>
             {% endfor %}
             {% else %}
             <div class="empty-state">
-                <div class="empty-icon">📭</div>
+                <i data-lucide="inbox" class="empty-icon"></i>
                 <h3>No schemes available yet</h3>
                 <p>Check back soon or contact the admin to add schemes.</p>
             </div>
@@ -83,7 +114,7 @@
         </div>
 
         <div id="noResults" class="empty-state" style="display:none;">
-            <div class="empty-icon">🔎</div>
+            <i data-lucide="search-x" class="empty-icon"></i>
             <h3>No matching schemes found</h3>
             <p>Try adjusting your search or filter preferences.</p>
         </div>

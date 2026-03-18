@@ -10,6 +10,7 @@ from flask import (
     url_for, session, flash
 )
 from functools import wraps
+from datetime import date
 import models
 
 bp = Blueprint("main", __name__)
@@ -47,6 +48,14 @@ def index():
 @bp.route("/schemes")
 def schemes():
     all_schemes = models.get_all_schemes()
+    
+    current_date = date.today()
+    for s in all_schemes:
+        if s["deadline"] and s["deadline"] < current_date:
+            s["status"] = "Expired"
+        else:
+            s["status"] = "Active"
+            
     return render_template("schemes.html", schemes=all_schemes)
 
 
@@ -58,17 +67,23 @@ def signup():
         return redirect(url_for("main.dashboard"))
 
     if request.method == "POST":
-        name       = request.form.get("name", "").strip()
-        email      = request.form.get("email", "").strip().lower()
-        password   = request.form.get("password", "")
-        age        = request.form.get("age", 0)
-        gender     = request.form.get("gender", "")
-        community  = request.form.get("community", "")
-        occupation = request.form.get("occupation", "").strip()
-        state      = request.form.get("state", "").strip()
+        name         = request.form.get("name", "").strip()
+        email        = request.form.get("email", "").strip().lower()
+        phone_number = request.form.get("phone_number", "").strip()
+        password     = request.form.get("password", "")
+        age          = request.form.get("age", 0)
+        gender       = request.form.get("gender", "")
+        community    = request.form.get("community", "")
+        occupation   = request.form.get("occupation", "").strip()
+        state        = request.form.get("state", "").strip()
+
+        # Phone number validation
+        if not phone_number.isdigit() or len(phone_number) != 10:
+            flash("Phone number must be exactly 10 digits.", "danger")
+            return render_template("signup.html")
 
         # Basic validation
-        if not all([name, email, password, age, gender, community, occupation, state]):
+        if not all([name, email, phone_number, password, age, gender, community, occupation, state]):
             flash("All fields are required.", "danger")
             return render_template("signup.html")
 
@@ -77,7 +92,7 @@ def signup():
             return render_template("signup.html")
 
         try:
-            models.create_user(name, email, password, int(age), gender,
+            models.create_user(name, email, phone_number, password, int(age), gender,
                                community, occupation, state)
             flash("Account created successfully! Please log in.", "success")
             return redirect(url_for("main.login"))
@@ -124,7 +139,16 @@ def dashboard():
     if not user:
         session.clear()
         return redirect(url_for("main.login"))
+        
     eligible = models.get_eligible_schemes(user)
+    
+    current_date = date.today()
+    for s in eligible:
+        if s["deadline"] and s["deadline"] < current_date:
+            s["status"] = "Expired"
+        else:
+            s["status"] = "Active"
+            
     return render_template("dashboard.html", user=user, schemes=eligible)
 
 
@@ -248,3 +272,4 @@ def admin_delete_scheme(scheme_id):
     models.delete_scheme(scheme_id)
     flash("Scheme deleted successfully.", "success")
     return redirect(url_for("main.admin_dashboard"))
+
