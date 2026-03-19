@@ -27,6 +27,36 @@ def get_user_by_email(email):
     return rows[0] if rows else None
 
 
+def get_or_create_google_user(name, email):
+    """
+    Find user by email. If not found, create a minimal user with Google data.
+    Provides defaults for required fields (age 0, community General, etc).
+    """
+    user = get_user_by_email(email)
+    if user:
+        return user
+
+    # Create new user with defaults
+    # Since phone_number and password are NOT NULL, we use placeholders
+    import uuid
+    import random
+    dummy_phone = "G" + str(random.randint(100000000, 999999999))
+    dummy_pw = str(uuid.uuid4())
+    
+    user_id = create_user(
+        name=name,
+        email=email,
+        phone_number=dummy_phone,
+        password=dummy_pw,
+        age=0,
+        gender='Other',
+        community='General',
+        occupation='Other',
+        state='Not Specified'
+    )
+    return get_user_by_id(user_id)
+
+
 def get_user_by_phone(phone):
     """Return user dict or None."""
     sql = "SELECT * FROM users WHERE phone_number = %s LIMIT 1"

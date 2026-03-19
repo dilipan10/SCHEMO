@@ -491,6 +491,37 @@ def login():
     return render_template("login.html")
 
 
+@bp.route("/api/auth/google", methods=["POST"])
+def google_auth():
+    """
+    Handle Google Auth from frontend.
+    Receives user info (name, email, pic) and syncs with local DB.
+    """
+    data  = request.get_json(force=True) or {}
+    name  = data.get("name")
+    email = data.get("email")
+
+    if not email or not name:
+        return jsonify({"error": "Missing profile info"}), 400
+
+    try:
+        user = models.get_or_create_google_user(name, email)
+        if user:
+            session["user_id"]   = user["id"]
+            session["user_name"] = user["name"]
+            # To show a nice welcome
+            return jsonify({
+                "success": True, 
+                "redirect": url_for("main.dashboard"),
+                "user_name": user["name"]
+            }), 200
+        else:
+            return jsonify({"error": "Failed to create user"}), 500
+    except Exception as e:
+        print(f"[Auth Error] Google Login failed: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
 @bp.route("/logout")
 def logout():
     session.clear()

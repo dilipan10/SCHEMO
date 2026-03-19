@@ -36,7 +36,7 @@
         {% if session.get('user_id') %}
         <li><a href="{{ url_for('main.dashboard') }}"
             class="nav-link {% if request.endpoint == 'main.dashboard' %}active{% endif %}">Dashboard</a></li>
-        <li><a href="{{ url_for('main.logout') }}" class="nav-link">Logout</a></li>
+        <li><a href="{{ url_for('main.logout') }}" class="nav-link" onclick="localStorage.removeItem('schemo_user');">Logout</a></li>
         {% else %}
         <li><a href="{{ url_for('main.login') }}"
             class="nav-link {% if request.endpoint == 'main.login' %}active{% endif %}">Login</a></li>
