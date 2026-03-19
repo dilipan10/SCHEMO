@@ -1,35 +1,43 @@
 {% extends "base.html" %}
 {% block content %}
 
+<!-- Load Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <section class="admin-section">
     <div class="admin-container">
 
         <!-- ══ Sidebar ══ -->
         <aside class="admin-sidebar">
             <div class="sidebar-brand">
-                <span>🛡</span>
+                <i data-lucide="shield"></i>
                 <span>Admin Panel</span>
             </div>
             <nav class="sidebar-nav">
-                <a href="#users-section" class="sidebar-link active" data-tab="users">
-                    <span>👥</span> Manage Users
+                <a href="#insights-section" class="sidebar-link active" data-tab="insights">
+                    <i data-lucide="pie-chart"></i> Insights
+                </a>
+                <a href="#users-section" class="sidebar-link" data-tab="users">
+                    <i data-lucide="users"></i> Manage Users
                 </a>
                 <a href="#schemes-section" class="sidebar-link" data-tab="schemes">
-                    <span>📋</span> Manage Schemes
+                    <i data-lucide="file-text"></i> Manage Schemes
                 </a>
                 <a href="{{ url_for('main.admin_add_scheme') }}" class="sidebar-link sidebar-link--accent">
-                    <span>➕</span> Add New Scheme
+                    <i data-lucide="plus-circle"></i> Add New Scheme
                 </a>
                 <a href="{{ url_for('main.admin_logout') }}" class="sidebar-link sidebar-link--danger">
-                    <span>🚪</span> Logout
+                    <i data-lucide="log-out"></i> Logout
                 </a>
             </nav>
             <div class="sidebar-stats">
                 <div class="sidebar-stat">
+                    <div class="stat-icon-mini"><i data-lucide="users"></i></div>
                     <span class="ss-num">{{ users|length }}</span>
                     <span class="ss-label">Total Users</span>
                 </div>
                 <div class="sidebar-stat">
+                    <div class="stat-icon-mini" style="color:var(--accent);"><i data-lucide="book-open"></i></div>
                     <span class="ss-num">{{ schemes|length }}</span>
                     <span class="ss-label">Total Schemes</span>
                 </div>
@@ -39,12 +47,122 @@
         <!-- ══ Main Content ══ -->
         <main class="admin-main">
             <div class="admin-topbar">
-                <h1>Admin Dashboard</h1>
-                <span class="admin-badge">Logged in as {{ session.admin_username }}</span>
+                <div class="admin-topbar-left">
+                    <h1>Admin Dashboard</h1>
+                </div>
+                <div class="admin-topbar-right">
+                    <div class="search-container">
+                        <i data-lucide="search"></i>
+                        <input type="text" class="form-control" placeholder="Search insights, users, schemes..." />
+                    </div>
+                    <div class="admin-profile">
+                        <div class="admin-avatar">A</div>
+                        <div class="admin-info">
+                            <span class="admin-name">{{ session.admin_username }}</span>
+                            <span class="admin-role">Administrator</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ─ Insights Section ─ -->
+            <div id="insights-section" class="admin-tab-panel active">
+                <div class="panel-header" style="justify-content: space-between; align-items: flex-start; margin-bottom: 2rem;">
+                    <div>
+                        <h2>Schemo Insights</h2>
+                        <p style="color: rgba(255,255,255,0.4); font-size: 0.85rem; margin-top: 0.35rem;" id="lastUpdatedText">Last updated: Just now</p>
+                    </div>
+                    <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+                        <select class="form-control" style="padding: 0.4rem 0.8rem; height: auto; font-size: 0.85rem; width: auto; background-color: rgba(255,255,255,0.05); border-color: var(--glass-border);">
+                            <option>📅 Last 30 Days</option>
+                            <option>📅 Last 7 Days</option>
+                            <option>📅 Year to Date</option>
+                        </select>
+                        <button class="btn btn-secondary btn-sm" onclick="exportCSV()" title="Export data to CSV" style="background: rgba(255,255,255,0.05); color: #fff; border: 1px solid var(--glass-border);">
+                            <i data-lucide="download" style="width:14px; height:14px; margin-right:4px; display:inline;"></i> Export CSV
+                        </button>
+                        <button class="btn btn-primary btn-sm" onclick="loadAnalytics()">
+                            <i data-lucide="refresh-cw" style="width:14px; height:14px; margin-right:4px; display:inline;"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Summary Cards -->
+                <div class="insights-summary-grid">
+                    <div class="stat-card skeleton-card" id="cardTotalUsers">
+                        <div class="stat-icon" style="background: rgba(59,130,246,0.15); color: #60a5fa;"><i data-lucide="users"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-title">Total Users</span>
+                            <div class="stat-body">
+                                <strong class="stat-value" id="statTotalUsers">0</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stat-card skeleton-card" id="cardStudents">
+                        <div class="stat-icon" style="background: rgba(139,92,246,0.15); color: #c084fc;"><i data-lucide="graduation-cap"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-title">Students</span>
+                            <div class="stat-body">
+                                <strong class="stat-value" id="statStudents">0</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stat-card skeleton-card" id="cardWorking">
+                        <div class="stat-icon" style="background: rgba(16,185,129,0.15); color: #34d399;"><i data-lucide="briefcase"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-title">Working Pros</span>
+                            <div class="stat-body">
+                                <strong class="stat-value" id="statWorking">0</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stat-card skeleton-card" id="cardFemale">
+                        <div class="stat-icon" style="background: rgba(236,72,153,0.15); color: #f472b6;"><i data-lucide="user"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-title">Female Users</span>
+                            <div class="stat-body">
+                                <strong class="stat-value" id="statFemale">0</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stat-card skeleton-card" id="cardMale">
+                        <div class="stat-icon" style="background: rgba(245,158,11,0.15); color: #fbbf24;"><i data-lucide="user"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-title">Male Users</span>
+                            <div class="stat-body">
+                                <strong class="stat-value" id="statMale">0</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Grid -->
+                <div class="insights-charts-grid">
+                    <div class="chart-card skeleton-card" id="cardOccChart">
+                        <h3>User Categories <i data-lucide="info" class="hint-icon" title="Distribution of user occupations"></i></h3>
+                        <div class="chart-wrapper"><canvas id="occupationChart"></canvas></div>
+                        <div class="chart-empty-state" id="emptyOcc" style="display:none;">No data available for the selected period.</div>
+                    </div>
+                    <div class="chart-card skeleton-card" id="cardGenChart">
+                        <h3>Gender Distribution <i data-lucide="info" class="hint-icon" title="Breakdown of users by gender identity"></i></h3>
+                        <div class="chart-wrapper"><canvas id="genderChart"></canvas></div>
+                        <div class="chart-empty-state" id="emptyGen" style="display:none;">No data available.</div>
+                    </div>
+                    <div class="chart-card full-width skeleton-card" id="cardComChart">
+                        <h3>Community Representation <i data-lucide="info" class="hint-icon" title="Number of registered users per community"></i></h3>
+                        <div class="chart-wrapper line-wrapper"><canvas id="communityChart"></canvas></div>
+                        <div class="chart-empty-state" id="emptyCom" style="display:none;">No data available.</div>
+                    </div>
+                    <div class="chart-card full-width skeleton-card" id="cardActChart">
+                        <h3>User Activity (Last 14 Days) <i data-lucide="info" class="hint-icon" title="Daily new user registrations over time"></i></h3>
+                        <div class="chart-wrapper line-wrapper"><canvas id="activityChart"></canvas></div>
+                        <div class="chart-empty-state" id="emptyAct" style="display:none;">No data available.</div>
+                    </div>
+                </div>
             </div>
 
             <!-- ─ Users Table ─ -->
-            <div id="users-section" class="admin-tab-panel active">
+            <div id="users-section" class="admin-tab-panel" style="display:none;">
                 <div class="panel-header">
                     <h2>Registered Users</h2>
                     <input type="text" id="userSearch" class="form-control search-input" placeholder="🔍 Search users…"
@@ -72,17 +190,19 @@
                             <tr>
                                 <td>{{ loop.index }}</td>
                                 <td><strong>{{ u.name }}</strong></td>
-                                <td>{{ u.email }}</td>
+                                <td><span style="font-size:0.85rem; color:var(--text-dim);">{{ u.email }}</span></td>
                                 <td>{{ u.age }}</td>
                                 <td>{{ u.gender }}</td>
                                 <td><span class="tag tag-community">{{ u.community }}</span></td>
-                                <td>{{ u.occupation }}</td>
+                                <td><span class="tag" style="background:rgba(255,255,255,0.05); color:var(--text-muted); opacity:0.8;">{{ u.occupation }}</span></td>
                                 <td>{{ u.state }}</td>
                                 <td>{{ u.created_at.strftime('%d %b %Y') if u.created_at else '—' }}</td>
-                                <td>
+                                <td class="action-btns">
                                     <form method="POST" action="{{ url_for('main.admin_delete_user', user_id=u.id) }}"
                                         onsubmit="return confirm('Delete user {{ u.name }}? This cannot be undone.')">
-                                        <button type="submit" class="btn btn-danger btn-xs">Delete</button>
+                                        <button type="submit" class="btn-icon btn-icon--danger" title="Delete User">
+                                            <i data-lucide="user-minus"></i>
+                                        </button>
                                     </form>
                                 </td>
                             </tr>
@@ -109,9 +229,10 @@
                             <tr>
                                 <th>#</th>
                                 <th>Scheme Name</th>
-                                <th>Community</th>
+                                <th>Category</th>
                                 <th>Age Range</th>
-                                <th>Max Income (₹)</th>
+                                <th>Status</th>
+                                <th>Min/Max Age</th>
                                 <th>Deadline</th>
                                 <th>Actions</th>
                             </tr>
@@ -123,17 +244,27 @@
                                 <td><strong>{{ s.scheme_name }}</strong></td>
                                 <td><span class="tag tag-community">{{ s.community }}</span></td>
                                 <td>{{ s.min_age }}–{{ s.max_age }}</td>
-                                <td>{% if s.max_income >= 99999999 %}No limit{% else %}{{ "{:,.0f}".format(s.max_income)
-                                    }}{% endif %}</td>
-                                <td>{{ s.deadline if s.deadline else '—' }}</td>
+                                <td>
+                                    {% if s.status == 'Active' %}
+                                        <span class="tag tag-active">Active</span>
+                                    {% else %}
+                                        <span class="tag tag-expired">Expired</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ s.min_age }}–{{ s.max_age }} years</td>
+                                <td style="color:var(--text-muted);">{{ s.deadline if s.deadline else 'No deadline' }}</td>
                                 <td class="action-btns">
                                     <a href="{{ url_for('main.admin_edit_scheme', scheme_id=s.id) }}"
-                                        class="btn btn-warning btn-xs">Edit</a>
+                                        class="btn-icon btn-icon--edit" title="Edit Scheme">
+                                        <i data-lucide="edit-3"></i>
+                                    </a>
                                     <form method="POST"
                                         action="{{ url_for('main.admin_delete_scheme', scheme_id=s.id) }}"
                                         style="display:inline;"
                                         onsubmit="return confirm('Delete scheme: {{ s.scheme_name }}?')">
-                                        <button type="submit" class="btn btn-danger btn-xs">Delete</button>
+                                        <button type="submit" class="btn-icon btn-icon--danger" title="Delete Scheme">
+                                            <i data-lucide="trash-2"></i>
+                                        </button>
                                     </form>
                                 </td>
                             </tr>
@@ -149,5 +280,318 @@
         </main>
     </div>
 </section>
+
+<!-- Admin Scripts (Tabs and Analytics) -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Top-level tab logic
+    const tabs = document.querySelectorAll('.sidebar-link[data-tab]');
+    const panels = document.querySelectorAll('.admin-tab-panel');
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', (e) => {
+            const targetId = tab.getAttribute('data-tab') + '-section';
+            
+            // remove active from all
+            tabs.forEach(t => t.classList.remove('active'));
+            panels.forEach(p => p.style.display = 'none');
+            
+            // set active
+            tab.classList.add('active');
+            const target = document.getElementById(targetId);
+            if (target) {
+                target.style.display = 'block';
+                target.classList.add('active');
+            }
+            
+            // if it's the Insights tab, ensure charts resize properly
+            if(targetId === 'insights-section') {
+               loadAnalytics();
+            }
+
+            // Refresh icons if new content is shown
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        });
+    });
+
+    // Load initial analytics
+    loadAnalytics();
+});
+
+// Global chart references so we can destroy them when updating
+let occupationChartInstance = null;
+let genderChartInstance = null;
+let communityChartInstance = null;
+let activityChartInstance = null;
+
+// Chart defaults (Dark theme)
+Chart.defaults.color = 'rgba(255, 255, 255, 0.6)';
+Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
+Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.08)';
+
+const chartColors = [
+    'rgba(59, 130, 246, 0.8)',  // blue
+    'rgba(139, 92, 246, 0.8)',  // purple
+    'rgba(16, 185, 129, 0.8)',  // emerald
+    'rgba(245, 158, 11, 0.8)',  // amber
+    'rgba(236, 72, 153, 0.8)',  // pink
+    'rgba(99, 102, 241, 0.8)',  // indigo
+    'rgba(239, 68, 68, 0.8)',   // red
+    'rgba(20, 184, 166, 0.8)',  // teal
+];
+
+const borderColors = chartColors.map(c => c.replace('0.8', '1'));
+
+function animateCounter(elemId, targetVal) {
+    const el = document.getElementById(elemId);
+    let start = 0;
+    const duration = 1000;
+    const stepTime = Math.abs(Math.floor(duration / Math.max(targetVal, 1)));
+    
+    if (targetVal === 0) {
+        el.innerText = '0';
+        return;
+    }
+    
+    const timer = setInterval(() => {
+        start += 1;
+        el.innerText = start;
+        if (start >= targetVal) clearInterval(timer);
+    }, stepTime);
+}
+
+let globalStatsData = null;
+
+async function loadAnalytics() {
+    // Show skeletons
+    document.querySelectorAll('.skeleton-card').forEach(el => el.classList.add('loading'));
+
+    try {
+        const res = await fetch('/api/schemo/stats');
+        if (!res.ok) throw new Error('API failed');
+        const data = await res.json();
+        globalStatsData = data;
+        
+        // Skeletons are now removed in finally block
+
+        // Update Last Updated time
+        const now = new Date();
+        document.getElementById('lastUpdatedText').innerText = `Last updated: ${now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+        
+        // Update summary counters
+        animateCounter('statTotalUsers', data.totals.total);
+        animateCounter('statStudents', data.totals.students);
+        animateCounter('statWorking', data.totals.working);
+        animateCounter('statFemale', data.totals.female);
+        animateCounter('statMale', data.totals.male);
+
+        animateCounter('statMale', data.totals.male);
+
+        // Chart.js Default Tooltip styling (SaaS look)
+        Chart.defaults.plugins.tooltip = {
+            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+            titleColor: '#fff',
+            bodyColor: '#cbd5e1',
+            borderColor: 'rgba(255,255,255,0.1)',
+            borderWidth: 1,
+            padding: 12,
+            boxPadding: 6,
+            usePointStyle: true,
+            cornerRadius: 8,
+            displayColors: true
+        };
+
+        // 1. Occupation Chart (Horizontal Bar -> More professional than Pie for many categories)
+        if (occupationChartInstance) occupationChartInstance.destroy();
+        if (data.occupations.length === 0) {
+            document.getElementById('occupationChart').style.display = 'none';
+            document.getElementById('emptyOcc').style.display = 'block';
+        } else {
+            document.getElementById('occupationChart').style.display = 'block';
+            document.getElementById('emptyOcc').style.display = 'none';
+            const ctxOcc = document.getElementById('occupationChart').getContext('2d');
+            occupationChartInstance = new Chart(ctxOcc, {
+                type: 'bar', // Horizontal bar for better readability
+                data: {
+                    labels: data.occupations.map(o => o.label || 'Unknown'),
+                    datasets: [{
+                        label: 'Users',
+                        data: data.occupations.map(o => o.count),
+                        backgroundColor: chartColors,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { precision: 0 } },
+                        y: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        // 2. Gender Chart (Doughnut with inside labels)
+        if (genderChartInstance) genderChartInstance.destroy();
+        if (data.genders.length === 0) {
+            document.getElementById('genderChart').style.display = 'none';
+            document.getElementById('emptyGen').style.display = 'block';
+        } else {
+            document.getElementById('genderChart').style.display = 'block';
+            document.getElementById('emptyGen').style.display = 'none';
+            const ctxGen = document.getElementById('genderChart').getContext('2d');
+            genderChartInstance = new Chart(ctxGen, {
+                type: 'doughnut',
+                data: {
+                    labels: data.genders.map(g => g.label || 'Unknown'),
+                    datasets: [{
+                        data: data.genders.map(g => g.count),
+                        backgroundColor: ['rgba(59, 130, 246, 0.8)', 'rgba(236, 72, 153, 0.8)', 'rgba(16, 185, 129, 0.8)'],
+                        borderColor: ['#1e293b', '#1e293b', '#1e293b'],
+                        borderWidth: 2,
+                        cutout: '75%'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } } }
+                }
+            });
+        }
+
+        // 3. Community Chart (Bar)
+        if (communityChartInstance) communityChartInstance.destroy();
+        if (data.communities.length === 0) {
+            document.getElementById('communityChart').style.display = 'none';
+            document.getElementById('emptyCom').style.display = 'block';
+        } else {
+            document.getElementById('communityChart').style.display = 'block';
+            document.getElementById('emptyCom').style.display = 'none';
+            const ctxCom = document.getElementById('communityChart').getContext('2d');
+            communityChartInstance = new Chart(ctxCom, {
+                type: 'bar',
+                data: {
+                    labels: data.communities.map(c => c.label || 'Unknown'),
+                    datasets: [{
+                        label: 'Users',
+                        data: data.communities.map(c => c.count),
+                        backgroundColor: 'rgba(139, 92, 246, 0.8)',
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { precision: 0 } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        // 4. Activity Chart (Line with smooth curve & hit radiuses)
+        if (activityChartInstance) activityChartInstance.destroy();
+        if (data.activity.length === 0) {
+            document.getElementById('activityChart').style.display = 'none';
+            document.getElementById('emptyAct').style.display = 'block';
+        } else {
+            document.getElementById('activityChart').style.display = 'block';
+            document.getElementById('emptyAct').style.display = 'none';
+            const ctxAct = document.getElementById('activityChart').getContext('2d');
+            const actLabels = data.activity.map(a => new Date(a.label).toLocaleDateString('en-GB', {day: 'numeric', month:'short'}));
+            
+            let gradient = ctxAct.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, 'rgba(59, 130, 246, 0.5)');
+            gradient.addColorStop(1, 'rgba(59, 130, 246, 0.0)');
+
+            activityChartInstance = new Chart(ctxAct, {
+                type: 'line',
+                data: {
+                    labels: actLabels,
+                    datasets: [{
+                        label: 'New Signups',
+                        data: data.activity.map(a => a.count),
+                        backgroundColor: gradient,
+                        borderColor: '#3b82f6',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4, // Smooth curve
+                        pointBackgroundColor: '#1e293b',
+                        pointBorderColor: '#3b82f6',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        hitRadius: 20
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    interaction: { mode: 'index', intersect: false },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { precision: 0, padding: 10 } },
+                        x: { grid: { display: false }, ticks: { padding: 10 } }
+                    }
+                }
+            });
+        }
+
+    } catch (err) {
+        console.error("Failed to load analytics: ", err);
+        // Show silent error in console or handle UI if needed
+    } finally {
+        // Always remove skeletons after a slight delay for feel
+        setTimeout(() => {
+            document.querySelectorAll('.skeleton-card').forEach(el => el.classList.remove('loading'));
+        }, 300);
+    }
+}
+
+// Export CSV Functionality
+function exportCSV() {
+    if (!globalStatsData) return alert("Data not loaded yet");
+    
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "Category,Label,Value\n";
+    
+    // Add Totals
+    csvContent += `Overview,Total Users,${globalStatsData.totals.total}\n`;
+    csvContent += `Overview,Students,${globalStatsData.totals.students}\n`;
+    csvContent += `Overview,Working Pros,${globalStatsData.totals.working}\n`;
+    csvContent += `Overview,Female Users,${globalStatsData.totals.female}\n`;
+    csvContent += `Overview,Male Users,${globalStatsData.totals.male}\n`;
+
+    // Add Occupations
+    globalStatsData.occupations.forEach(o => {
+        csvContent += `Occupation,${o.label || 'Unknown'},${o.count}\n`;
+    });
+
+    // Add Communities
+    globalStatsData.communities.forEach(c => {
+        csvContent += `Community,${c.label || 'Unknown'},${c.count}\n`;
+    });
+
+    // Add Activity
+    globalStatsData.activity.forEach(a => {
+        csvContent += `Activity,${a.label},${a.count}\n`;
+    });
+
+    // Trigger Download
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `schemo_insights_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+</script>
 
 {% endblock %}

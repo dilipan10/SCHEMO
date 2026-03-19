@@ -229,6 +229,24 @@ The UI was fully redesigned to a modern dark SaaS aesthetic with:
 
 ## 📋 Changelog
 
+### v2.2 – 19 March 2026 (Admin Insights & Security)
+- ✅ **Admin Dashboard Overhaul** 
+  - Redesigned with a premium glassmorphism sidebar (Lucide icons replacing emojis).
+  - Added modern topbar with Search bar and Admin Profile Badge.
+  - Interactive "Insights" tab with skeleton loading states and responsive charts.
+- ✅ **Real-Time Analytics Engine**
+  - Integrated `get_user_stats` API with dynamic trend calculations (Growth rates).
+  - Dynamic user demographic charts (Occupation, Gender, Community).
+  - Scheme status (Active/Expired) now calculated in real-time on the dashboard.
+- ✅ **Enhanced Security & Validation**
+  - Unique Phone Number check during registration to prevent duplicate signups.
+  - Improved Signup error handling (sanitizing raw database errors).
+  - Expanded `occupation` column in DB to prevent data truncation.
+- ✅ **UI/UX Refinements**
+  - Unified table design for users and schemes with modern action icons.
+  - Professionalized Chatbot interface (visual polish).
+  - General CSS tweaks for better contrast and dark theme consistency.
+
 ### v2.1 – 18 March 2026 (UI/UX Polish Pass)
 - ✅ Navbar brand redesigned — gradient icon box (blue→purple square) replacing plain icon
 - ✅ Removed stray separator dot from navbar center

@@ -27,6 +27,13 @@ def get_user_by_email(email):
     return rows[0] if rows else None
 
 
+def get_user_by_phone(phone):
+    """Return user dict or None."""
+    sql = "SELECT * FROM users WHERE phone_number = %s LIMIT 1"
+    rows = execute_query(sql, (phone,), fetch=True)
+    return rows[0] if rows else None
+
+
 def get_user_by_id(user_id):
     """Return user dict or None."""
     sql = "SELECT * FROM users WHERE id = %s LIMIT 1"
@@ -48,6 +55,61 @@ def get_all_users():
 def delete_user(user_id):
     """Delete a user by id."""
     execute_query("DELETE FROM users WHERE id = %s", (user_id,))
+
+
+def get_user_stats():
+    """Returns analytics data (totals, occupation, gender, community, timeline, trends)."""
+    totals = {}
+    trends = {}
+
+    def get_count(sql_part):
+        res = execute_query(f"SELECT COUNT(*) as c FROM users WHERE {sql_part}", fetch=True)
+        return res[0]['c'] if res else 0
+
+    def calc_trend_val(curr, prev):
+        if prev == 0:
+            return 0 if curr == 0 else 100
+        return round(((curr - prev) / prev) * 100)
+
+    # Time filters
+    now_q = "AND created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)"
+    prev_q = "AND created_at < DATE_SUB(NOW(), INTERVAL 7 DAY) AND created_at >= DATE_SUB(NOW(), INTERVAL 14 DAY)"
+
+    # 1. Total Users
+    totals['total'] = get_count("1=1")
+    trends['total'] = calc_trend_val(get_count("1=1 " + now_q), get_count("1=1 " + prev_q))
+
+    # 2. Female
+    totals['female'] = get_count("gender = 'Female'")
+    trends['female'] = calc_trend_val(get_count("gender = 'Female' " + now_q), get_count("gender = 'Female' " + prev_q))
+
+    # 3. Male
+    totals['male'] = get_count("gender = 'Male'")
+    trends['male'] = calc_trend_val(get_count("gender = 'Male' " + now_q), get_count("gender = 'Male' " + prev_q))
+
+    # 4. Students
+    totals['students'] = get_count("occupation = 'Student'")
+    trends['students'] = calc_trend_val(get_count("occupation = 'Student' " + now_q), get_count("occupation = 'Student' " + prev_q))
+
+    # 5. Working Pros
+    working_where = "occupation IN ('Salaried Employee', 'Self Employed', 'Business Owner')"
+    totals['working'] = get_count(working_where)
+    trends['working'] = calc_trend_val(get_count(working_where + " " + now_q), get_count(working_where + " " + prev_q))
+
+    # Groupings
+    occupations = execute_query("SELECT occupation as label, COUNT(*) as count FROM users GROUP BY occupation", fetch=True)
+    genders = execute_query("SELECT gender as label, COUNT(*) as count FROM users GROUP BY gender", fetch=True)
+    communities = execute_query("SELECT community as label, COUNT(*) as count FROM users GROUP BY community", fetch=True)
+    activity = execute_query("SELECT DATE(created_at) as label, COUNT(*) as count FROM users GROUP BY DATE(created_at) ORDER BY label ASC LIMIT 14", fetch=True)
+
+    return {
+        "totals": totals,
+        "trends": trends,
+        "occupations": occupations,
+        "genders": genders,
+        "communities": communities,
+        "activity": activity
+    }
 
 
 # ═══════════════════════════════════════════════════════════════

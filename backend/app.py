@@ -7,6 +7,10 @@ Run with:  python app.py
 
 import sys
 import os
+from dotenv import load_dotenv
+
+# Load .env variables (GEMINI_API_KEY etc.)
+load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
 
 # Make backend/ importable when running app.py from the project root
 sys.path.insert(0, os.path.join(os.path.dirname(__file__)))

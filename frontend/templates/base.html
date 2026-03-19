@@ -110,7 +110,6 @@
       <p>Built with <i data-lucide="heart" style="width:13px;height:13px;display:inline-block;color:#ef4444;vertical-align:middle;margin:0 2px;"></i> for Indian citizens &nbsp;·&nbsp; Schemo v2.0</p>
     </div>
   </footer>
-
   <script src="{{ url_for('static', filename='js/script.js') }}"></script>
   <!-- Initialize Lucide Icons -->
   <script>
@@ -124,6 +123,292 @@
       });
     }, 5000);
   </script>
-</body>
 
+  <!-- ═══ SCHEMO AI CHATBOT WIDGET ══════════════════════════════════════ -->
+
+
+  <!-- ═══ SCHEMO AI CHATBOT WIDGET — Professional Edition ══════════════════════════════════════ -->
+
+  <!-- Floating toggle button -->
+  <button class="chat-toggle-btn" id="chatToggleBtn" aria-label="Open SchemoBot" title="Chat with SchemoBot">
+    <!-- Red notif badge -->
+    <div class="chat-notif-badge" id="chatBadge">1</div>
+    
+    <!-- Open icon -->
+    <svg class="chat-open-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+    </svg>
+    <!-- Close icon -->
+    <svg class="chat-close-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+    </svg>
+  </button>
+
+  <!-- Chat window -->
+  <div class="chat-window" id="chatWindow" role="dialog" aria-label="SchemoBot chat">
+    
+    <!-- Header -->
+    <div class="chat-header">
+      <div class="chat-bot-avatar">🤖</div>
+      <div class="chat-header-info">
+        <div class="chat-header-name">SchemoBot</div>
+        <div class="chat-header-sub">
+          <span>Replies instantly</span>
+        </div>
+      </div>
+      <div class="chat-header-actions">
+        <button class="chat-hdr-btn danger" id="chatClearBtn" title="Reset chat">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Messages -->
+    <div class="chat-body" id="chatBody">
+      <!-- Welcome block -->
+      <div class="chat-welcome" id="chatWelcome">
+        <div class="chat-welcome-title">👋 Welcome to Schemo!</div>
+        <div class="chat-welcome-sub">I'm your AI assistant for Indian Government Schemes. How can I help you today?</div>
+        <div class="chat-welcome-divider"></div>
+      </div>
+    </div>
+
+    <!-- Quick reply chips (horizontal scroll) -->
+    <div class="quick-replies" id="quickReplies">
+      <button class="quick-chip" data-msg="I am a student looking for scholarships">🎓 Scholarships</button>
+      <button class="quick-chip" data-msg="I am a farmer, what schemes are available?">🌾 Farming</button>
+      <button class="quick-chip" data-msg="I am looking for job or employment schemes">💼 Employment</button>
+      <button class="quick-chip" data-msg="What schemes are there for women?">👩 Women Welfare</button>
+      <button class="quick-chip" data-msg="Housing schemes for BPL families">🏠 Housing</button>
+    </div>
+
+    <!-- Input bar -->
+    <div class="chat-footer">
+      <div class="chat-input-wrap">
+        <textarea class="chat-input" id="chatInput" rows="1"
+          placeholder="Type your message..." aria-label="Chat message"></textarea>
+      </div>
+      <button class="chat-send-btn" id="chatSendBtn" aria-label="Send message">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="22" y1="2" x2="11" y2="13"></line>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+        </svg>
+      </button>
+    </div>
+    
+    <div class="chat-powered">
+      Powered by <strong>Schemo AI</strong>
+    </div>
+
+  </div>
+
+  <!-- Chatbot JavaScript -->
+  <script>
+  (function() {
+    const toggleBtn  = document.getElementById('chatToggleBtn');
+    const badge      = document.getElementById('chatBadge');
+    const chatWindow = document.getElementById('chatWindow');
+    const chatBody   = document.getElementById('chatBody');
+    const chatInput  = document.getElementById('chatInput');
+    const sendBtn    = document.getElementById('chatSendBtn');
+    const clearBtn   = document.getElementById('chatClearBtn');
+    const quickReplies = document.getElementById('quickReplies');
+    const welcomeBlock = document.getElementById('chatWelcome');
+
+    let chatHistory = [];   // [{role:'user'|'model', parts:['text']}]
+    let isOpen = false;
+    let isBusy = false;
+
+    // Time helper
+    const getTimeStamp = () => {
+      return new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    };
+
+    // ── Toggle open/close ──────────────────────────────────────
+    toggleBtn.addEventListener('click', () => {
+      isOpen = !isOpen;
+      toggleBtn.classList.toggle('open', isOpen);
+      chatWindow.classList.toggle('open', isOpen);
+      if (badge) badge.style.display = 'none'; // hide badge forever on open
+      if (isOpen) setTimeout(() => chatInput.focus(), 400);
+    });
+
+    // ── Clear chat ─────────────────────────────────────────────
+    clearBtn.addEventListener('click', () => {
+      // Keep only the welcome block
+      Array.from(chatBody.children).forEach(child => {
+        if (child.id !== 'chatWelcome') child.remove();
+      });
+      chatHistory = [];
+      quickReplies.style.display = 'flex';
+      welcomeBlock.style.display = 'flex';
+    });
+
+    // ── Quick chip clicks ──────────────────────────────────────
+    quickReplies.querySelectorAll('.quick-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const msg = chip.dataset.msg;
+        quickReplies.style.display = 'none';
+        sendMessage(msg);
+      });
+    });
+
+    // ── Send on Enter (Shift+Enter = newline) ─────────────────
+    chatInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        triggerSend();
+      }
+    });
+    sendBtn.addEventListener('click', triggerSend);
+
+    // Auto-resize textarea
+    chatInput.addEventListener('input', () => {
+      chatInput.style.height = 'auto'; // reset
+      chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px';
+      
+      // Toggle send button state
+      sendBtn.disabled = !chatInput.value.trim().length;
+    });
+    // Init send btn state
+    sendBtn.disabled = true;
+
+    function triggerSend() {
+      const txt = chatInput.value.trim();
+      if (!txt || isBusy) return;
+      
+      quickReplies.style.display = 'none';
+      welcomeBlock.style.display = 'none'; // hide welcome on first real message
+      
+      chatInput.value = '';
+      chatInput.style.height = 'auto';
+      sendBtn.disabled = true;
+      sendMessage(txt);
+    }
+
+    // ── Core send function ─────────────────────────────────────
+    async function sendMessage(userText) {
+      if (isBusy) return;
+      isBusy = true;
+      sendBtn.disabled = true;
+
+      appendUserMsg(userText);
+      chatHistory.push({ role: 'user', parts: [userText] });
+
+      const typingId = showTyping();
+
+      try {
+        const res = await fetch('/api/chatbot', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: userText, history: chatHistory.slice(0, -1) })
+        });
+        const data = await res.json();
+        removeTyping(typingId);
+        
+        const reply = data.reply || 'Sorry, I could not connect to the server.';
+        appendBotMsg(reply);
+        chatHistory.push({ role: 'model', parts: [reply] });
+        // Keep history manageable
+        if (chatHistory.length > 20) chatHistory = chatHistory.slice(-20);
+        
+      } catch(err) {
+        removeTyping(typingId);
+        appendBotMsg('⚠️ Network error. Please check your connection and try again.');
+      }
+
+      isBusy = false;
+      // enable send if text exists
+      sendBtn.disabled = !chatInput.value.trim().length; 
+      chatInput.focus();
+    }
+
+    // ── DOM helpers ────────────────────────────────────────────
+    function appendUserMsg(text) {
+      const row = document.createElement('div');
+      row.className = 'chat-msg user';
+      row.innerHTML = `
+        <div class="msg-wrap">
+          <div class="msg-bubble">${escapeHtml(text)}</div>
+          <div class="msg-time">${getTimeStamp()} <span class="read-tick">✓✓</span></div>
+        </div>
+      `;
+      chatBody.appendChild(row);
+      scrollBottom();
+    }
+
+    // Add new day separator if it's the very first message
+    function appendBotMsg(text) {
+      if (chatBody.children.length === 1 && chatBody.children[0].id === 'chatWelcome') {
+         const sep = document.createElement('div');
+         sep.className = 'chat-date-sep';
+         sep.textContent = 'Today';
+         chatBody.appendChild(sep);
+      }
+
+      const row = document.createElement('div');
+      row.className = 'chat-msg bot';
+      row.innerHTML = `
+        <div class="msg-avatar">🤖</div>
+        <div class="msg-wrap">
+          <div class="msg-bubble">${markdownToHtml(text)}</div>
+          <div class="msg-time">${getTimeStamp()}</div>
+        </div>
+      `;
+      chatBody.appendChild(row);
+      scrollBottom();
+    }
+
+    function showTyping() {
+      const id = 'typing-' + Date.now();
+      const row = document.createElement('div');
+      row.className = 'chat-msg bot';
+      row.id = id;
+      row.innerHTML = `
+        <div class="msg-avatar">🤖</div>
+        <div class="msg-wrap">
+          <div class="msg-bubble" style="padding:0; background:transparent; border:none; box-shadow:none;">
+            <div class="typing-indicator"><span></span><span></span><span></span></div>
+          </div>
+        </div>
+      `;
+      chatBody.appendChild(row);
+      scrollBottom();
+      return id;
+    }
+
+    function removeTyping(id) {
+      const el = document.getElementById(id);
+      if (el) el.remove();
+    }
+
+    function scrollBottom() {
+      chatBody.scrollTop = chatBody.scrollHeight;
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // Modern markdown formatting
+    function markdownToHtml(text) {
+      return text
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        // Replace links [text](url) -> <a href="url" target="_blank">text</a>
+        .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" style="color:#60a5fa;text-decoration:none;border-bottom:1px solid #60a5fa;padding-bottom:1px;">$1</a>')
+        .replace(/`([^`]+)`/g, '<code style="background:rgba(255,255,255,0.08);color:#93c5fd;padding:2px 5px;border-radius:4px;font-size:0.9em;font-family:monospace;">$1</code>')
+        .replace(/^#{1,3} (.+)$/gm, '<strong style="color:#fff;display:block;margin-top:.4rem;font-size:1.05em">$1</strong>')
+        .replace(/^[•\-\*] /gm, '<span style="color:#93c5fd;font-weight:bold;margin-right:5px">&bull;</span> ')
+        .replace(/\n/g, '<br>');
+    }
+  })();
+  </script>
+
+</body>
 </html>
