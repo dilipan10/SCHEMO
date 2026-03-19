@@ -263,20 +263,21 @@ SCHEME_KB = {
     },
     "tamil": {
         "keywords": ["என்ன","திட்டம்","உதவி","வணக்கம்","யாருக்கு","எனக்கு","நான்",
-                     "தமிழ்","தேவை","கேள்வி","மாணவர்","விவசாயி","பெண்","வேலை"],
+                     "தமிழ்","தேவை","கேள்வி","மாணவர்","விவசாயி","பெண்","வேலை",
+                     "tamil", "language", "lang", "speak in tamil", "talk in tamil"],
         "reply": (
-            "வணக்கம்! 🙏 நான் SchemoBot — Schemo இன் AI உதவியாளர்.\n\n"
-            "இந்திய அரசு திட்டங்களைப் பற்றி நான் உங்களுக்கு தெளிவாக விளக்குவேன்.\n\n"
+            "**ஆம், தாராளமாக தமிழில் பேசலாம்!** 🙏\n\n"
+            "வணக்கம்! நான் SchemoBot — உங்களுக்கு உதவி செய்ய தயாராக இருக்கிறேன்.\n\n"
+            "இந்திய அரசு திட்டங்களைப் பற்றி நான் உங்களுக்கு தெளிவாக விளக்குவேன்.\n"
             "நீங்கள் எந்த வகையான திட்டங்களை தேடுகிறீர்கள்?\n\n"
             "👇 உங்கள் தேவையை கீழே தெரிவிக்கவும்:\n"
-            "• 🎓 **மாணவர் உதவித்தொகை** — student scholarship\n"
-            "• 🌾 **விவசாயி திட்டங்கள்** — farmer schemes\n"
-            "• 👩 **பெண்கள் நலத்திட்டங்கள்** — women welfare\n"
-            "• 💼 **வேலைவாய்ப்பு** — employment & job schemes\n"
-            "• 🏠 **வீட்டு திட்டங்கள்** — housing schemes\n"
-            "• 🏥 **சுகாதார திட்டங்கள்** — health schemes\n"
-            "• 👴 **முதியோர் நலத்திட்டங்கள்** — senior citizen benefits\n\n"
-            "தமிழிலோ ஆங்கிலத்திலோ கேளுங்கள் — நான் பதில் சொல்கிறேன்! 😊"
+            "• 🎓 **மாணவர் உதவித்தொகை**\n"
+            "• 🌾 **விவசாயி திட்டங்கள்**\n"
+            "• 👩 **பெண்கள் நலத்திட்டங்கள்**\n"
+            "• 💼 **வேலைவாய்ப்பு மற்றும் கடன்**\n"
+            "• 🏠 **வீட்டு திட்டங்கள்**\n"
+            "• 🏥 **சுகாதார திட்டங்கள்**\n\n"
+            "தமிழிலிலேயே கேளுங்கள் — நான் பதில் சொல்கிறேன்! 😊"
         )
     },
 }
@@ -321,6 +322,7 @@ def chatbot():
     api_key = os.environ.get("GEMINI_API_KEY", "").strip()
     if api_key and api_key != "your_gemini_api_key_here":
         try:
+            # support for google-genai (v1.0.0+)
             from google import genai
             from google.genai import types
 
@@ -330,21 +332,29 @@ def chatbot():
             chat_history = []
             for turn in history:
                 role  = turn.get("role", "user")
-                parts = turn.get("parts", [])
-                if role in ("user", "model") and parts:
-                    chat_history.append(
-                        types.Content(
-                            role=role,
-                            parts=[types.Part.from_text(text=str(p)) for p in parts]
-                        )
-                    )
+                text_content = ""
+                # handle both list and string inputs
+                p = turn.get("parts", [])
+                if isinstance(p, list) and p: text_content = str(p[0])
+                elif isinstance(p, str): text_content = p
+                
+                if role in ("user", "model") and text_content:
+                    chat_history.append(types.Content(role=role, parts=[types.Part.from_text(text=text_content)]))
 
+            # PREMIUM SYSTEM PROMPT (Expert AI Persona)
             SYSTEM = (
-                "You are SchemoBot — helpful AI assistant for Schemo, Indian Government Scheme Portal. "
-                "Help users find Indian government schemes. For each scheme mention: name, eligibility, "
-                "benefits, required documents, deadline and official link. "
-                "Reply in Tamil if user writes in Tamil, English otherwise. "
-                "Be concise, friendly and use bullet points with emojis."
+                "You are Schemo AI — a world-class, professional AI Advisor specialized in Indian Government Schemes. "
+                "Your personality: Empathetic, expert, accurate, and extremely helpful (similar to ChatGPT/Gemini). "
+                "\n\nCONTEXT:\n"
+                "Schemo is a portal for Indian citizens (Students, Farmers, Women, Entrepreneurs, etc.) to discover benefits. "
+                "\n\nCORE RULES:\n"
+                "1. If the user asks in Tamil, reply in Tamil. If English, reply in English. "
+                "2. For every scheme: provide accurate details (Name, Eligibility, Benefits, Steps to Apply, and Link). "
+                "3. Use Markdown for formatting: bold headers, bullet points, and tables. "
+                "4. If you don't know a specific detail, offer to find related govt portals like india.gov.in. "
+                "5. Be conversational but concise. Use professional emojis. "
+                "\n\nTASK:\n"
+                "Help the user navigate their life goals using government resources."
             )
 
             chat = client.chats.create(
@@ -352,18 +362,19 @@ def chatbot():
                 history=chat_history,
                 config=types.GenerateContentConfig(
                     system_instruction=SYSTEM,
-                    temperature=0.7,
-                    max_output_tokens=900,
+                    temperature=0.8,
+                    max_output_tokens=1024,
                 ),
             )
             response = chat.send_message(user_message)
             return jsonify({"reply": response.text}), 200
 
-        except Exception:
-            # Quota/key error — silently fall back to built-in bot
+        except Exception as e:
+            # Silently fallback but use the error log if needed
+            print(f"[Bot Debug] Gemini failed: {e}")
             pass
 
-    # Built-in smart bot (no API key needed, always works)
+    # Expert-style Built-in Fallback (if API fails)
     return jsonify({"reply": smart_reply(user_message)}), 200
 
 
