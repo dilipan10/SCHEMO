@@ -12,6 +12,7 @@ from flask import (
 from functools import wraps
 from datetime import date
 import models
+from sms import send_otp_sms
 
 bp = Blueprint("main", __name__)
 
@@ -307,8 +308,21 @@ def smart_reply(user_message: str) -> str:
 
 
 # =============================================================================
-# CHATBOT API ROUTE — Hybrid: Gemini first, smart built-in fallback
+# CHATBOT API ROUTE — Hybrid: Groq first, smart built-in fallback
 # =============================================================================
+
+SYSTEM_PROMPT = (
+    "You are Schemo AI — a world-class, professional AI Advisor specialized in Indian Government Schemes. "
+    "Your personality: Empathetic, expert, accurate, and extremely helpful. "
+    "Schemo is a portal for Indian citizens (Students, Farmers, Women, Entrepreneurs, etc.) to discover benefits. "
+    "RULES: "
+    "1. If the user asks in Tamil, reply in Tamil. If English, reply in English. "
+    "2. For every scheme provide: Name, Eligibility, Benefits, Steps to Apply, and official Link. "
+    "3. Use Markdown formatting: bold headers, bullet points. "
+    "4. Be conversational but concise. Use professional emojis. "
+    "5. Help the user navigate their life goals using government resources."
+)
+
 
 @bp.route("/api/chatbot", methods=["POST"])
 def chatbot():
@@ -318,63 +332,42 @@ def chatbot():
     if not user_message:
         return jsonify({"reply": "Please type a message!"}), 200
 
-    # Try Gemini only if a real API key is configured
-    api_key = os.environ.get("GEMINI_API_KEY", "").strip()
-    if api_key and api_key != "your_gemini_api_key_here":
+    api_key = os.environ.get("GROQ_API_KEY", "").strip()
+    if api_key:
         try:
-            # support for google-genai (v1.0.0+)
-            from google import genai
-            from google.genai import types
+            from groq import Groq
 
             history = data.get("history", [])
-            client  = genai.Client(api_key=api_key)
+            messages = [{"role": "system", "content": SYSTEM_PROMPT}]
 
-            chat_history = []
             for turn in history:
-                role  = turn.get("role", "user")
-                text_content = ""
-                # handle both list and string inputs
-                p = turn.get("parts", [])
-                if isinstance(p, list) and p: text_content = str(p[0])
-                elif isinstance(p, str): text_content = p
-                
-                if role in ("user", "model") and text_content:
-                    chat_history.append(types.Content(role=role, parts=[types.Part.from_text(text=text_content)]))
+                role = turn.get("role", "user")
+                # Groq uses 'assistant' not 'model'
+                if role == "model":
+                    role = "assistant"
+                content = turn.get("content") or (
+                    turn.get("parts", [""])[0]
+                    if isinstance(turn.get("parts"), list)
+                    else turn.get("parts", "")
+                )
+                if role in ("user", "assistant") and content:
+                    messages.append({"role": role, "content": str(content)})
 
-            # PREMIUM SYSTEM PROMPT (Expert AI Persona)
-            SYSTEM = (
-                "You are Schemo AI — a world-class, professional AI Advisor specialized in Indian Government Schemes. "
-                "Your personality: Empathetic, expert, accurate, and extremely helpful (similar to ChatGPT/Gemini). "
-                "\n\nCONTEXT:\n"
-                "Schemo is a portal for Indian citizens (Students, Farmers, Women, Entrepreneurs, etc.) to discover benefits. "
-                "\n\nCORE RULES:\n"
-                "1. If the user asks in Tamil, reply in Tamil. If English, reply in English. "
-                "2. For every scheme: provide accurate details (Name, Eligibility, Benefits, Steps to Apply, and Link). "
-                "3. Use Markdown for formatting: bold headers, bullet points, and tables. "
-                "4. If you don't know a specific detail, offer to find related govt portals like india.gov.in. "
-                "5. Be conversational but concise. Use professional emojis. "
-                "\n\nTASK:\n"
-                "Help the user navigate their life goals using government resources."
-            )
+            messages.append({"role": "user", "content": user_message})
 
-            chat = client.chats.create(
-                model="gemini-2.0-flash",
-                history=chat_history,
-                config=types.GenerateContentConfig(
-                    system_instruction=SYSTEM,
-                    temperature=0.8,
-                    max_output_tokens=1024,
-                ),
+            client = Groq(api_key=api_key)
+            response = client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=messages,
+                temperature=0.8,
+                max_tokens=1024,
             )
-            response = chat.send_message(user_message)
-            return jsonify({"reply": response.text}), 200
+            return jsonify({"reply": response.choices[0].message.content}), 200
 
         except Exception as e:
-            # Silently fallback but use the error log if needed
-            print(f"[Bot Debug] Gemini failed: {e}")
-            pass
+            print(f"[Bot Debug] Groq failed: {e}")
 
-    # Expert-style Built-in Fallback (if API fails)
+    # Built-in fallback if Groq fails
     return jsonify({"reply": smart_reply(user_message)}), 200
 
 
@@ -411,16 +404,60 @@ def index():
     return render_template("index.html")
 
 
+@bp.route("/sso-callback")
+def sso_callback():
+    """Clerk SSO callback — Clerk JS handles the token, then syncs with backend."""
+    return render_template("sso_callback.html")
+
+
 @bp.route("/schemes")
 def schemes():
     all_schemes = models.get_all_schemes()
     current_date = date.today()
     for s in all_schemes:
-        if s["deadline"] and s["deadline"] < current_date:
-            s["status"] = "Expired"
+        dl = s.get("deadline")
+        if dl:
+            if isinstance(dl, str):
+                from datetime import datetime
+                try:
+                    dl = datetime.strptime(dl, "%Y-%m-%d").date()
+                    s["deadline"] = dl
+                except Exception:
+                    pass
+            s["status"] = "Expired" if isinstance(dl, date) and dl < current_date else "Active"
         else:
             s["status"] = "Active"
     return render_template("schemes.html", schemes=all_schemes)
+
+
+@bp.route("/api/schemes/search")
+def api_search_schemes():
+    """JSON search endpoint for live scheme search."""
+    q = request.args.get("q", "").strip().lower()
+    community = request.args.get("community", "").strip()
+    all_schemes = models.get_all_schemes()
+    current_date = date.today()
+    results = []
+    for s in all_schemes:
+        dl = s.get("deadline")
+        if dl:
+            if isinstance(dl, str):
+                from datetime import datetime
+                try:
+                    dl = datetime.strptime(dl, "%Y-%m-%d").date()
+                except Exception:
+                    dl = None
+            s["status"] = "Expired" if dl and dl < current_date else "Active"
+            s["deadline_str"] = dl.strftime("%d %b %Y") if dl else ""
+        else:
+            s["status"] = "Active"
+            s["deadline_str"] = ""
+        # filter
+        text_match = not q or q in s.get("scheme_name","").lower() or q in s.get("description","").lower() or q in s.get("eligibility","").lower()
+        comm_match = not community or community.lower() in s.get("community","").lower()
+        if text_match and comm_match:
+            results.append(s)
+    return jsonify(results)
 
 
 # =============================================================================
@@ -433,6 +470,37 @@ def signup():
         return redirect(url_for("main.dashboard"))
 
     if request.method == "POST":
+        # Check if this is OTP verification step
+        if request.form.get("otp_step") == "verify":
+            stored_otp = session.get("signup_otp")
+            stored_data = session.get("signup_data")
+            user_otp = request.form.get("otp", "").strip()
+            
+            if not stored_otp or not stored_data:
+                flash("Session expired. Please start again.", "danger")
+                return redirect(url_for("main.signup"))
+            
+            if user_otp == stored_otp:
+                # OTP verified — create user
+                try:
+                    user_id = models.create_user(
+                        stored_data["name"], stored_data["email"], 
+                        stored_data["phone_number"], stored_data["password"],
+                        int(stored_data["age"]), stored_data["gender"],
+                        stored_data["community"], stored_data["occupation"], 
+                        stored_data["state"]
+                    )
+                    session.pop("signup_otp", None)
+                    session.pop("signup_data", None)
+                    flash("Account created successfully! Please log in.", "success")
+                    return redirect(url_for("main.login"))
+                except Exception as e:
+                    flash(f"Error creating account: {e}", "danger")
+            else:
+                flash("Invalid OTP. Please try again.", "danger")
+                return render_template("signup_otp.html", phone=stored_data["phone_number"])
+        
+        # Initial signup — collect data and send OTP
         name         = request.form.get("name", "").strip()
         email        = request.form.get("email", "").strip().lower()
         phone_number = request.form.get("phone_number", "").strip()
@@ -459,13 +527,28 @@ def signup():
             flash("This phone number is already registered. Please use another or log in.", "warning")
             return render_template("signup.html")
 
-        try:
-            models.create_user(name, email, phone_number, password, int(age), gender,
-                               community, occupation, state)
-            flash("Account created successfully! Please log in.", "success")
-            return redirect(url_for("main.login"))
-        except Exception:
-            flash("Something went wrong with the registration. Please try again later.", "danger")
+        # Generate 6-digit OTP
+        import random
+        otp = str(random.randint(100000, 999999))
+        
+        # Store in session
+        session["signup_otp"] = otp
+        session["signup_data"] = {
+            "name": name, "email": email, "phone_number": phone_number,
+            "password": password, "age": age, "gender": gender,
+            "community": community, "occupation": occupation, "state": state
+        }
+        
+        # Send OTP via SMS
+        sms_sent = send_otp_sms(phone_number, otp)
+        
+        if sms_sent:
+            flash(f"OTP sent to {phone_number}. Please check your SMS.", "success")
+        else:
+            # Fallback: show OTP in flash (dev mode)
+            flash(f"SMS service unavailable. Your OTP is: {otp}", "warning")
+        
+        return render_template("signup_otp.html", phone=phone_number)
 
     return render_template("signup.html")
 
@@ -476,19 +559,55 @@ def login():
         return redirect(url_for("main.dashboard"))
 
     if request.method == "POST":
+        # Check if OTP verification step
+        if request.form.get("otp_step") == "verify":
+            stored_otp = session.get("login_otp")
+            stored_user_id = session.get("login_user_id")
+            user_otp = request.form.get("otp", "").strip()
+            
+            if not stored_otp or not stored_user_id:
+                flash("Session expired. Please log in again.", "danger")
+                return redirect(url_for("main.login"))
+            
+            if user_otp == stored_otp:
+                user = models.get_user_by_id(stored_user_id)
+                session.pop("login_otp", None)
+                session.pop("login_user_id", None)
+                session["user_id"] = user["id"]
+                session["user_name"] = user["name"]
+                flash(f"Welcome back, {user['name']}!", "success")
+                return redirect(url_for("main.dashboard"))
+            else:
+                flash("Invalid OTP. Please try again.", "danger")
+                return render_template("login_otp.html")
+        
+        # Initial login — verify credentials
         email    = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
 
         user = models.get_user_by_email(email)
         if user and models.verify_user_password(user, password):
-            session["user_id"]   = user["id"]
-            session["user_name"] = user["name"]
-            flash(f"Welcome back, {user['name']}!", "success")
-            return redirect(url_for("main.dashboard"))
+            # Generate OTP for 2FA
+            import random
+            otp = str(random.randint(100000, 999999))
+            session["login_otp"] = otp
+            session["login_user_id"] = user["id"]
+            
+            # Send OTP via SMS
+            phone = user.get("phone_number", "")
+            sms_sent = send_otp_sms(phone, otp)
+            
+            if sms_sent:
+                flash(f"OTP sent to your registered phone. Please check SMS.", "success")
+            else:
+                flash(f"SMS unavailable. Your OTP is: {otp}", "warning")
+            
+            return render_template("login_otp.html", phone=phone)
         else:
             flash("Invalid email or password. Please try again.", "danger")
 
-    return render_template("login.html")
+    clerk_key = os.environ.get("CLERK_PUBLISHABLE_KEY", "")
+    return render_template("login.html", clerk_publishable_key=clerk_key)
 
 
 @bp.route("/api/auth/google", methods=["POST"])

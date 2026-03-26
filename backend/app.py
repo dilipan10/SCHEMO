@@ -29,9 +29,10 @@ app = Flask(
     static_folder=os.path.abspath(STATIC_DIR),
 )
 
-app.secret_key = os.environ.get("SECRET_KEY", "schemo-super-secret-key-2024")
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "schemo-super-secret-key-2024")
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["CLERK_PUBLISHABLE_KEY"] = os.environ.get("CLERK_PUBLISHABLE_KEY", "")
 
 # ── Register blueprint (routes) ──────────────────────────────────────────
 from routes import bp
