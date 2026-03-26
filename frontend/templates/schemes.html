@@ -6,21 +6,21 @@
         <div class="hero-badge" style="margin-bottom:1.25rem;"><i data-lucide="list-checks" style="width:16px;height:16px;"></i> All Government Schemes</div>
         <h1 class="page-hero-title">Discover <span class="text-gradient">Government Schemes</span></h1>
         <p style="color:var(--text-muted); font-size:1.05rem; margin-top:.85rem; max-width:550px; margin-left:auto; margin-right:auto;">
-            Explore all available schemes. <a href="{{ url_for('main.signup') }}" style="color:var(--primary-light); font-weight:600;">Sign up</a> to
-            see which ones you're eligible for.
+            Search, filter, and explore all available schemes.
+            <a href="{{ url_for('main.signup') }}" style="color:var(--primary-light); font-weight:600;">Sign up</a> to see which ones you're eligible for.
         </p>
     </div>
 </section>
 
-<section class="section" style="padding-top:3rem;">
+<section class="section" style="padding-top:2rem;">
     <div class="container">
 
-        <!-- Filter bar -->
-        <div class="filter-bar">
+        <!-- ── Filter bar ── -->
+        <div class="filter-bar" style="margin-bottom:2rem;">
             <i data-lucide="search" style="color:var(--text-muted); flex-shrink:0;"></i>
             <input type="text" id="schemeSearch" class="form-control search-input"
                 style="background:transparent; border:none; flex:1; padding:0;"
-                placeholder="Search by scheme name or keyword…" />
+                placeholder="Search by scheme name, keyword, community…" autocomplete="off" />
             <div style="width:1px; height:28px; background:var(--glass-border);"></div>
             <select id="communityFilter" class="form-control filter-select"
                 style="background:transparent; border:none; max-width:180px;">
@@ -32,25 +32,46 @@
                 <option value="Minority">Minority</option>
                 <option value="EWS">EWS</option>
             </select>
+            <div style="width:1px; height:28px; background:var(--glass-border);"></div>
+            <select id="statusFilter" class="form-control filter-select"
+                style="background:transparent; border:none; max-width:140px;">
+                <option value="">All Status</option>
+                <option value="active">Active Only</option>
+                <option value="expired">Expired</option>
+            </select>
         </div>
 
+        <!-- ── Results count ── -->
+        <p id="resultsCount" style="color:var(--text-muted); font-size:.9rem; margin-bottom:1.25rem;">
+            Showing <strong id="visibleCount">{{ schemes|length }}</strong> of {{ schemes|length }} schemes
+        </p>
+
+        <!-- ── Scheme Grid ── -->
         <div class="scheme-grid" id="allSchemesGrid">
             {% if schemes %}
             {% for s in schemes %}
-            <div class="scheme-card glass" data-community="{{ s.community }}" data-name="{{ s.scheme_name|lower }}">
+            {% set deadline_str = s.deadline.strftime('%d %b %Y') if s.deadline and s.deadline.__class__.__name__ != 'str' else (s.deadline or '') %}
+            <div class="scheme-card glass"
+                data-community="{{ s.community }}"
+                data-name="{{ s.scheme_name|lower }}"
+                data-desc="{{ s.description|lower }}"
+                data-eligibility="{{ s.eligibility|lower }}"
+                data-status="{{ s.status|lower }}"
+                data-id="{{ s.id }}">
+
                 <div class="scheme-card-header">
                     <span class="scheme-community-badge">{{ s.community }}</span>
                     {% if s.status == 'Expired' %}
-                    <span style="font-size:.8rem; font-weight:700; color:#EF4444; background:rgba(239,68,68,0.1); padding:.3rem .75rem; border-radius:99px; border:1px solid rgba(239,68,68,0.2);">🔴 Expired</span>
+                    <span class="deadline-badge expired">🔴 Expired</span>
                     {% elif s.deadline %}
-                    <span style="font-size:.8rem; font-weight:600; color:var(--text-muted);">📅 {{ s.deadline.strftime('%d %b %Y') if s.deadline.__class__.__name__ != 'str' else s.deadline }}</span>
+                    <span class="deadline-badge active" data-deadline="{{ deadline_str }}">📅 {{ deadline_str }}</span>
                     {% else %}
-                    <span style="font-size:.8rem; font-weight:600; color:#10B981;">🟢 Ongoing</span>
+                    <span class="deadline-badge ongoing">🟢 Ongoing</span>
                     {% endif %}
                 </div>
 
                 <h3 class="scheme-card-title">{{ s.scheme_name }}</h3>
-                <p class="scheme-card-desc">{{ s.description[:180] }}{% if s.description|length > 180 %}…{% endif %}</p>
+                <p class="scheme-card-desc">{{ s.description[:160] }}{% if s.description|length > 160 %}…{% endif %}</p>
 
                 <div class="scheme-card-meta">
                     <div class="meta-item">
@@ -63,45 +84,31 @@
                     </div>
                 </div>
 
-                <details class="scheme-details">
-                    <summary>View Full Details</summary>
-                    <div class="scheme-detail-body">
-                        <div>
-                            <h4><i data-lucide="gift" style="width:14px;"></i> Benefits</h4>
-                            <p>{{ s.benefits }}</p>
-                        </div>
-                        <div>
-                            <h4><i data-lucide="check-circle" style="width:14px;"></i> Eligibility</h4>
-                            <p>{{ s.eligibility }}</p>
-                        </div>
-                        <div>
-                            <h4><i data-lucide="file-text" style="width:14px;"></i> Documents Required</h4>
-                            <p>{{ s.documents_required }}</p>
-                        </div>
-                        <div style="padding-top: 1rem; border-top: 1px solid var(--glass-border);">
-                            <h4><i data-lucide="calendar" style="width:14px;"></i> Deadline</h4>
-                            {% if s.status == 'Expired' %}
-                            <p style="color:#EF4444; font-weight:700;">❌ Expired ({{ s.deadline.strftime('%d %b %Y') if s.deadline.__class__.__name__ != 'str' else s.deadline }})</p>
-                            {% elif s.deadline %}
-                            <p style="color:#10B981; font-weight:700;">⏳ Apply before: {{ s.deadline.strftime('%d %b %Y') if s.deadline.__class__.__name__ != 'str' else s.deadline }}</p>
-                            {% else %}
-                            <p style="color:#10B981; font-weight:700;">🟢 Ongoing Scheme</p>
-                            {% endif %}
-                        </div>
-                    </div>
-                </details>
-
-                {% if s.status == 'Expired' %}
-                <button class="btn btn-full mt-1" disabled
-                    style="cursor:not-allowed; opacity:0.5; background:var(--bg-card2); color:var(--text-muted); border:1px solid var(--glass-border);">
-                    <i data-lucide="x-circle"></i> Applications Closed
-                </button>
-                {% else %}
-                <a href="{{ s.official_link }}" target="_blank" rel="noopener"
-                    class="btn btn-primary btn-full mt-1">
-                    Apply on Official Portal <i data-lucide="external-link"></i>
-                </a>
+                <!-- Deadline countdown -->
+                {% if s.status != 'Expired' and s.deadline %}
+                <div class="deadline-countdown" data-deadline="{{ deadline_str }}">
+                    <i data-lucide="clock" style="width:13px;height:13px;"></i>
+                    <span class="countdown-text"></span>
+                </div>
                 {% endif %}
+
+                <div style="display:flex; gap:.6rem; margin-top:1rem;">
+                    <button class="btn btn-outline btn-sm" style="flex:1;"
+                        onclick="openSchemeModal({{ s|tojson }})">
+                        <i data-lucide="info"></i> Details
+                    </button>
+                    {% if s.status == 'Expired' %}
+                    <button class="btn btn-sm" disabled
+                        style="flex:1; cursor:not-allowed; opacity:0.5; background:var(--bg-card2); color:var(--text-muted); border:1px solid var(--glass-border);">
+                        <i data-lucide="x-circle"></i> Closed
+                    </button>
+                    {% else %}
+                    <a href="{{ s.official_link }}" target="_blank" rel="noopener"
+                        class="btn btn-primary btn-sm" style="flex:1;">
+                        Apply <i data-lucide="external-link"></i>
+                    </a>
+                    {% endif %}
+                </div>
             </div>
             {% endfor %}
             {% else %}
@@ -121,5 +128,290 @@
 
     </div>
 </section>
+
+<!-- ══════════════════════════════════════════════════════════
+     SCHEME DETAIL MODAL
+══════════════════════════════════════════════════════════ -->
+<div id="schemeModal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.75); backdrop-filter:blur(6px); overflow-y:auto; padding:2rem 1rem;">
+    <div id="schemeModalBox" style="max-width:720px; margin:0 auto; background:#111827; border:1px solid rgba(255,255,255,0.1); border-radius:20px; overflow:hidden; position:relative;">
+
+        <!-- Modal Header -->
+        <div id="modalHeader" style="padding:1.75rem 2rem 1.25rem; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:flex-start; gap:1rem;">
+            <div>
+                <div id="modalCommunityBadge" style="display:inline-block; font-size:.75rem; font-weight:700; padding:.3rem .85rem; border-radius:99px; background:rgba(59,130,246,0.15); color:#93c5fd; border:1px solid rgba(59,130,246,0.3); margin-bottom:.75rem;"></div>
+                <h2 id="modalTitle" style="color:#fff; font-size:1.35rem; font-weight:800; line-height:1.3; margin:0;"></h2>
+            </div>
+            <button onclick="closeSchemeModal()" style="background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.1); color:#fff; border-radius:8px; padding:.5rem; cursor:pointer; flex-shrink:0;">
+                <i data-lucide="x" style="width:18px;height:18px;"></i>
+            </button>
+        </div>
+
+        <!-- Modal Body -->
+        <div style="padding:1.75rem 2rem; display:flex; flex-direction:column; gap:1.5rem;">
+
+            <!-- Deadline + Status -->
+            <div id="modalDeadlineRow" style="display:flex; gap:1rem; flex-wrap:wrap;"></div>
+
+            <!-- Description -->
+            <div>
+                <h4 style="color:#94a3b8; font-size:.75rem; text-transform:uppercase; letter-spacing:.08em; margin-bottom:.5rem;">About this Scheme</h4>
+                <p id="modalDesc" style="color:#e2e8f0; line-height:1.7; margin:0;"></p>
+            </div>
+
+            <!-- Benefits -->
+            <div style="background:rgba(16,185,129,0.06); border:1px solid rgba(16,185,129,0.15); border-radius:12px; padding:1.25rem;">
+                <h4 style="color:#10B981; font-size:.85rem; font-weight:700; margin-bottom:.6rem; display:flex; align-items:center; gap:.4rem;">
+                    <i data-lucide="gift" style="width:15px;height:15px;"></i> Benefits
+                </h4>
+                <p id="modalBenefits" style="color:#d1fae5; margin:0; line-height:1.7;"></p>
+            </div>
+
+            <!-- Eligibility -->
+            <div style="background:rgba(59,130,246,0.06); border:1px solid rgba(59,130,246,0.15); border-radius:12px; padding:1.25rem;">
+                <h4 style="color:#60a5fa; font-size:.85rem; font-weight:700; margin-bottom:.6rem; display:flex; align-items:center; gap:.4rem;">
+                    <i data-lucide="check-circle" style="width:15px;height:15px;"></i> Eligibility Criteria
+                </h4>
+                <p id="modalEligibility" style="color:#bfdbfe; margin:0; line-height:1.7;"></p>
+            </div>
+
+            <!-- Documents Required -->
+            <div style="background:rgba(139,92,246,0.06); border:1px solid rgba(139,92,246,0.15); border-radius:12px; padding:1.25rem;">
+                <h4 style="color:#a78bfa; font-size:.85rem; font-weight:700; margin-bottom:.75rem; display:flex; align-items:center; gap:.4rem;">
+                    <i data-lucide="file-text" style="width:15px;height:15px;"></i> Documents Required
+                </h4>
+                <ul id="modalDocsList" style="margin:0; padding:0; list-style:none; display:flex; flex-direction:column; gap:.5rem;"></ul>
+            </div>
+
+            <!-- Missing Documents Help -->
+            <div id="missingDocsSection" style="background:rgba(245,158,11,0.06); border:1px solid rgba(245,158,11,0.2); border-radius:12px; padding:1.25rem;">
+                <h4 style="color:#fbbf24; font-size:.85rem; font-weight:700; margin-bottom:.75rem; display:flex; align-items:center; gap:.4rem;">
+                    <i data-lucide="alert-triangle" style="width:15px;height:15px;"></i> Don't have a document? Here's where to get it:
+                </h4>
+                <div id="missingDocsGuide" style="display:flex; flex-direction:column; gap:.6rem;"></div>
+            </div>
+
+            <!-- Nearest Esai Maiyam / Govt Service Center -->
+            <div style="background:rgba(20,184,166,0.06); border:1px solid rgba(20,184,166,0.2); border-radius:12px; padding:1.25rem;">
+                <h4 style="color:#2dd4bf; font-size:.85rem; font-weight:700; margin-bottom:.75rem; display:flex; align-items:center; gap:.4rem;">
+                    <i data-lucide="map-pin" style="width:15px;height:15px;"></i> Find Nearest Esai Maiyam / Govt Service Centre
+                </h4>
+                <p style="color:#99f6e4; font-size:.85rem; margin-bottom:.85rem; line-height:1.6;">
+                    Esai Maiyam (Ease of Living Centres) help you apply for government schemes, get certificates, and submit documents — all in one place.
+                </p>
+                <div style="display:flex; gap:.75rem; flex-wrap:wrap;">
+                    <a id="mapsEsaiLink" href="#" target="_blank" rel="noopener"
+                        class="btn btn-sm" style="background:rgba(20,184,166,0.15); color:#2dd4bf; border:1px solid rgba(20,184,166,0.3);">
+                        <i data-lucide="navigation" style="width:14px;height:14px;"></i> Find on Google Maps
+                    </a>
+                    <a id="mapsCSCLink" href="https://locator.csccloud.in/" target="_blank" rel="noopener"
+                        class="btn btn-sm" style="background:rgba(59,130,246,0.1); color:#93c5fd; border:1px solid rgba(59,130,246,0.2);">
+                        <i data-lucide="building-2" style="width:14px;height:14px;"></i> CSC Locator (National)
+                    </a>
+                    <a id="mapsDistrictLink" href="#" target="_blank" rel="noopener"
+                        class="btn btn-sm" style="background:rgba(139,92,246,0.1); color:#c4b5fd; border:1px solid rgba(139,92,246,0.2);">
+                        <i data-lucide="map" style="width:14px;height:14px;"></i> District Collector Office
+                    </a>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Modal Footer -->
+        <div style="padding:1.25rem 2rem; border-top:1px solid rgba(255,255,255,0.08); display:flex; gap:.75rem; justify-content:flex-end;">
+            <button onclick="closeSchemeModal()" class="btn btn-outline btn-sm">Close</button>
+            <a id="modalApplyBtn" href="#" target="_blank" rel="noopener" class="btn btn-primary btn-sm">
+                Apply on Official Portal <i data-lucide="external-link"></i>
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+.deadline-badge { font-size:.8rem; font-weight:700; padding:.3rem .75rem; border-radius:99px; }
+.deadline-badge.expired { color:#EF4444; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.2); }
+.deadline-badge.active  { color:var(--text-muted); background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); }
+.deadline-badge.ongoing { color:#10B981; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.2); }
+.deadline-countdown { display:flex; align-items:center; gap:.4rem; font-size:.8rem; color:#fbbf24; margin-top:.5rem; }
+.doc-item { display:flex; align-items:center; gap:.6rem; color:#ddd6fe; font-size:.9rem; }
+.doc-item::before { content:"📄"; font-size:.85rem; }
+.where-item { display:flex; gap:.75rem; align-items:flex-start; padding:.6rem .75rem; background:rgba(255,255,255,0.03); border-radius:8px; border:1px solid rgba(255,255,255,0.06); }
+.where-icon { font-size:1.1rem; flex-shrink:0; margin-top:.1rem; }
+.where-text { font-size:.85rem; color:#fde68a; line-height:1.5; }
+.where-text strong { color:#fbbf24; display:block; margin-bottom:.15rem; }
+</style>
+
+<script>
+// ── Deadline countdown ─────────────────────────────────────────
+document.querySelectorAll('.deadline-countdown').forEach(el => {
+    const raw = el.dataset.deadline;
+    if (!raw) return;
+    const parts = raw.split(' ');
+    const months = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+    const deadline = new Date(parseInt(parts[2]), months[parts[1]], parseInt(parts[0]));
+    const now = new Date();
+    const diff = Math.ceil((deadline - now) / (1000 * 60 * 60 * 24));
+    const span = el.querySelector('.countdown-text');
+    if (diff <= 0) { el.style.display = 'none'; return; }
+    if (diff <= 7)       { span.textContent = `⚠️ Only ${diff} day${diff>1?'s':''} left!`; el.style.color='#ef4444'; }
+    else if (diff <= 30) { span.textContent = `${diff} days remaining`; el.style.color='#fbbf24'; }
+    else                 { span.textContent = `${diff} days remaining`; el.style.color='#10b981'; }
+});
+
+// ── Filter schemes ─────────────────────────────────────────────
+const schemeSearch = document.getElementById('schemeSearch');
+const communityFilter = document.getElementById('communityFilter');
+const statusFilter = document.getElementById('statusFilter');
+const allSchemesGrid = document.getElementById('allSchemesGrid');
+const noResults = document.getElementById('noResults');
+const visibleCount = document.getElementById('visibleCount');
+
+function filterSchemes() {
+    if (!allSchemesGrid) return;
+    const q = schemeSearch ? schemeSearch.value.toLowerCase().trim() : '';
+    const comm = communityFilter ? communityFilter.value.toLowerCase() : '';
+    const status = statusFilter ? statusFilter.value.toLowerCase() : '';
+    let visible = 0;
+    allSchemesGrid.querySelectorAll('.scheme-card').forEach(card => {
+        const name = (card.dataset.name || '');
+        const desc = (card.dataset.desc || '');
+        const elig = (card.dataset.eligibility || '');
+        const community = (card.dataset.community || '').toLowerCase();
+        const cardStatus = (card.dataset.status || '').toLowerCase();
+        const textMatch = !q || name.includes(q) || desc.includes(q) || elig.includes(q) || community.includes(q);
+        const commMatch = !comm || community.includes(comm);
+        const statusMatch = !status || cardStatus === status;
+        const show = textMatch && commMatch && statusMatch;
+        card.style.display = show ? '' : 'none';
+        if (show) visible++;
+    });
+    if (noResults) noResults.style.display = visible === 0 ? 'block' : 'none';
+    if (visibleCount) visibleCount.textContent = visible;
+}
+
+if (schemeSearch) schemeSearch.addEventListener('input', filterSchemes);
+if (communityFilter) communityFilter.addEventListener('change', filterSchemes);
+if (statusFilter) statusFilter.addEventListener('change', filterSchemes);
+
+// ── Document → where to get it map ────────────────────────────
+const DOC_GUIDE = {
+    "aadhaar": { icon:"🪪", label:"Aadhaar Card", where:"Nearest Aadhaar Enrolment Centre (Post Office / Bank). Book appointment at uidai.gov.in" },
+    "income certificate": { icon:"📋", label:"Income Certificate", where:"Tahsildar / Revenue Department office in your taluk. Bring Aadhaar + ration card." },
+    "caste certificate": { icon:"📜", label:"Caste Certificate", where:"Tahsildar / Revenue Department office. Bring Aadhaar, ration card, and parent's caste proof." },
+    "bank": { icon:"🏦", label:"Bank Passbook / Account", where:"Nearest nationalised bank (SBI, Indian Bank, etc.) or Post Office for zero-balance Jan Dhan account." },
+    "marksheet": { icon:"📝", label:"Marksheet / Certificate", where:"Your school or college examination section. For board certificates: Tamil Nadu DGE office." },
+    "bpl": { icon:"🗂️", label:"BPL / Ration Card", where:"Nearest Ration Shop or Taluk Supply Office. Apply online at tnpds.gov.in (Tamil Nadu)." },
+    "land": { icon:"🌾", label:"Land Records / Patta", where:"Village Administrative Officer (VAO) or Tahsildar office. Online at eservices.tn.gov.in." },
+    "birth certificate": { icon:"👶", label:"Birth Certificate", where:"Municipal Corporation / Panchayat office where birth was registered. Online at tnreginet.gov.in." },
+    "disability": { icon:"♿", label:"Disability Certificate", where:"Government Hospital (Civil Surgeon). Medical Board assessment required." },
+    "pan": { icon:"💳", label:"PAN Card", where:"Nearest NSDL / UTIITSL centre or apply online at onlineservices.nsdl.com." },
+    "photo": { icon:"📷", label:"Passport Photo", where:"Any photo studio. Ensure white background, recent photo." },
+    "enrollment": { icon:"🎓", label:"Bonafide / Enrollment Certificate", where:"Your school or college administrative office." },
+    "vending": { icon:"🛒", label:"Vending Certificate", where:"Urban Local Body (Municipality / Corporation) office in your area." },
+};
+
+function getDocGuide(docText) {
+    const lower = docText.toLowerCase();
+    const guides = [];
+    for (const [key, val] of Object.entries(DOC_GUIDE)) {
+        if (lower.includes(key)) guides.push(val);
+    }
+    return guides;
+}
+
+// ── Modal open/close ───────────────────────────────────────────
+function openSchemeModal(scheme) {
+    document.getElementById('modalTitle').textContent = scheme.scheme_name;
+    document.getElementById('modalCommunityBadge').textContent = scheme.community;
+    document.getElementById('modalDesc').textContent = scheme.description;
+    document.getElementById('modalBenefits').textContent = scheme.benefits;
+    document.getElementById('modalEligibility').textContent = scheme.eligibility;
+
+    // Deadline row
+    const dlRow = document.getElementById('modalDeadlineRow');
+    dlRow.innerHTML = '';
+    const status = scheme.status || 'Active';
+    const dl = scheme.deadline_str || scheme.deadline || '';
+    if (status === 'Expired') {
+        dlRow.innerHTML = `<span class="deadline-badge expired">🔴 Expired${dl ? ' — ' + dl : ''}</span>`;
+    } else if (dl) {
+        // Countdown
+        const parts = dl.split ? dl.split(' ') : [];
+        let daysLeft = '';
+        if (parts.length === 3) {
+            const months = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+            const deadline = new Date(parseInt(parts[2]), months[parts[1]], parseInt(parts[0]));
+            const diff = Math.ceil((deadline - new Date()) / (1000*60*60*24));
+            if (diff > 0) daysLeft = ` · ${diff} days left`;
+        }
+        dlRow.innerHTML = `<span class="deadline-badge active">📅 Apply before: ${dl}${daysLeft}</span>`;
+    } else {
+        dlRow.innerHTML = `<span class="deadline-badge ongoing">🟢 Ongoing — No deadline</span>`;
+    }
+
+    // Documents list
+    const docsList = document.getElementById('modalDocsList');
+    docsList.innerHTML = '';
+    const docs = (scheme.documents_required || '').split(',').map(d => d.trim()).filter(Boolean);
+    docs.forEach(doc => {
+        const li = document.createElement('li');
+        li.className = 'doc-item';
+        li.textContent = doc;
+        docsList.appendChild(li);
+    });
+
+    // Missing docs guide
+    const guide = document.getElementById('missingDocsGuide');
+    guide.innerHTML = '';
+    const allGuides = getDocGuide(scheme.documents_required || '');
+    if (allGuides.length === 0) {
+        document.getElementById('missingDocsSection').style.display = 'none';
+    } else {
+        document.getElementById('missingDocsSection').style.display = 'block';
+        allGuides.forEach(g => {
+            const div = document.createElement('div');
+            div.className = 'where-item';
+            div.innerHTML = `<span class="where-icon">${g.icon}</span><div class="where-text"><strong>${g.label}</strong>${g.where}</div>`;
+            guide.appendChild(div);
+        });
+    }
+
+    // Maps links — search for Esai Maiyam near user
+    const schemeName = encodeURIComponent(scheme.scheme_name);
+    document.getElementById('mapsEsaiLink').href =
+        `https://www.google.com/maps/search/Esai+Maiyam+government+service+centre+near+me`;
+    document.getElementById('mapsDistrictLink').href =
+        `https://www.google.com/maps/search/District+Collector+Office+near+me`;
+
+    // Apply button
+    const applyBtn = document.getElementById('modalApplyBtn');
+    if (status === 'Expired') {
+        applyBtn.style.opacity = '0.5';
+        applyBtn.style.pointerEvents = 'none';
+        applyBtn.textContent = 'Applications Closed';
+    } else {
+        applyBtn.style.opacity = '1';
+        applyBtn.style.pointerEvents = '';
+        applyBtn.href = scheme.official_link;
+        applyBtn.innerHTML = 'Apply on Official Portal <i data-lucide="external-link"></i>';
+    }
+
+    document.getElementById('schemeModal').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+    lucide.createIcons();
+}
+
+function closeSchemeModal() {
+    document.getElementById('schemeModal').style.display = 'none';
+    document.body.style.overflow = '';
+}
+
+// Close on backdrop click
+document.getElementById('schemeModal').addEventListener('click', function(e) {
+    if (e.target === this) closeSchemeModal();
+});
+
+// Close on Escape
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSchemeModal(); });
+</script>
 
 {% endblock %}
