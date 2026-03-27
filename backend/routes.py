@@ -353,6 +353,7 @@ def smart_reply(user_message: str) -> str:
 # =============================================================================
 
 SYSTEM_PROMPT = (
+<<<<<<< HEAD
     "You are Schemo AI — a professional AI Advisor for Indian Government Schemes. "
     "You have access to a real database of schemes. When the user asks about schemes, "
     "use the SCHEME DATA provided in the context to give accurate answers. "
@@ -394,6 +395,20 @@ def get_db_schemes_context(query: str) -> str:
         return ""
 
 
+=======
+    "You are Schemo AI — a world-class, professional AI Advisor specialized in Indian Government Schemes. "
+    "Your personality: Empathetic, expert, accurate, and extremely helpful. "
+    "Schemo is a portal for Indian citizens (Students, Farmers, Women, Entrepreneurs, etc.) to discover benefits. "
+    "RULES: "
+    "1. If the user asks in Tamil, reply in Tamil. If English, reply in English. "
+    "2. For every scheme provide: Name, Eligibility, Benefits, Steps to Apply, and official Link. "
+    "3. Use Markdown formatting: bold headers, bullet points. "
+    "4. Be conversational but concise. Use professional emojis. "
+    "5. Help the user navigate their life goals using government resources."
+)
+
+
+>>>>>>> a020675087b727f059f81924023580ac3e3efa17
 @bp.route("/api/chatbot", methods=["POST"])
 def chatbot():
     data = request.get_json(force=True) or {}
@@ -402,15 +417,19 @@ def chatbot():
     if not user_message:
         return jsonify({"reply": "Please type a message!"}), 200
 
+<<<<<<< HEAD
     # Always fetch relevant schemes from DB to ground the answer
     db_context = get_db_schemes_context(user_message)
 
+=======
+>>>>>>> a020675087b727f059f81924023580ac3e3efa17
     api_key = os.environ.get("GROQ_API_KEY", "").strip()
     if api_key:
         try:
             from groq import Groq
 
             history = data.get("history", [])
+<<<<<<< HEAD
             # Build system prompt with live DB context
             system_with_context = SYSTEM_PROMPT
             if db_context:
@@ -420,6 +439,13 @@ def chatbot():
 
             for turn in history:
                 role = turn.get("role", "user")
+=======
+            messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+
+            for turn in history:
+                role = turn.get("role", "user")
+                # Groq uses 'assistant' not 'model'
+>>>>>>> a020675087b727f059f81924023580ac3e3efa17
                 if role == "model":
                     role = "assistant"
                 content = turn.get("content") or (
@@ -436,7 +462,11 @@ def chatbot():
             response = client.chat.completions.create(
                 model="llama-3.3-70b-versatile",
                 messages=messages,
+<<<<<<< HEAD
                 temperature=0.7,
+=======
+                temperature=0.8,
+>>>>>>> a020675087b727f059f81924023580ac3e3efa17
                 max_tokens=1024,
             )
             return jsonify({"reply": response.choices[0].message.content}), 200
@@ -444,9 +474,13 @@ def chatbot():
         except Exception as e:
             print(f"[Bot Debug] Groq failed: {e}")
 
+<<<<<<< HEAD
     # Fallback: if DB has matches, show them; else use keyword KB
     if db_context:
         return jsonify({"reply": db_context + "\n\n💡 Ask me anything about these schemes!"}), 200
+=======
+    # Built-in fallback if Groq fails
+>>>>>>> a020675087b727f059f81924023580ac3e3efa17
     return jsonify({"reply": smart_reply(user_message)}), 200
 
 
@@ -516,8 +550,12 @@ def index():
 @bp.route("/sso-callback")
 def sso_callback():
     """Clerk SSO callback — Clerk JS handles the token, then syncs with backend."""
+<<<<<<< HEAD
     clerk_key = os.environ.get("CLERK_PUBLISHABLE_KEY", "")
     return render_template("sso_callback.html", clerk_publishable_key=clerk_key)
+=======
+    return render_template("sso_callback.html")
+>>>>>>> a020675087b727f059f81924023580ac3e3efa17
 
 
 @bp.route("/schemes")
@@ -582,6 +620,37 @@ def signup():
     clerk_key = os.environ.get("CLERK_PUBLISHABLE_KEY", "")
 
     if request.method == "POST":
+        # Check if this is OTP verification step
+        if request.form.get("otp_step") == "verify":
+            stored_otp = session.get("signup_otp")
+            stored_data = session.get("signup_data")
+            user_otp = request.form.get("otp", "").strip()
+            
+            if not stored_otp or not stored_data:
+                flash("Session expired. Please start again.", "danger")
+                return redirect(url_for("main.signup"))
+            
+            if user_otp == stored_otp:
+                # OTP verified — create user
+                try:
+                    user_id = models.create_user(
+                        stored_data["name"], stored_data["email"], 
+                        stored_data["phone_number"], stored_data["password"],
+                        int(stored_data["age"]), stored_data["gender"],
+                        stored_data["community"], stored_data["occupation"], 
+                        stored_data["state"]
+                    )
+                    session.pop("signup_otp", None)
+                    session.pop("signup_data", None)
+                    flash("Account created successfully! Please log in.", "success")
+                    return redirect(url_for("main.login"))
+                except Exception as e:
+                    flash(f"Error creating account: {e}", "danger")
+            else:
+                flash("Invalid OTP. Please try again.", "danger")
+                return render_template("signup_otp.html", phone=stored_data["phone_number"])
+        
+        # Initial signup — collect data and send OTP
         name         = request.form.get("name", "").strip()
         email        = request.form.get("email", "").strip().lower()
         phone_number = request.form.get("phone_number", "").strip()
@@ -608,6 +677,7 @@ def signup():
             flash("This phone number is already registered.", "warning")
             return render_template("signup.html", clerk_publishable_key=clerk_key)
 
+<<<<<<< HEAD
         try:
             models.create_user(
                 name, email, phone_number, password,
@@ -618,6 +688,30 @@ def signup():
         except Exception as e:
             flash(f"Error creating account: {e}", "danger")
             return render_template("signup.html", clerk_publishable_key=clerk_key)
+=======
+        # Generate 6-digit OTP
+        import random
+        otp = str(random.randint(100000, 999999))
+        
+        # Store in session
+        session["signup_otp"] = otp
+        session["signup_data"] = {
+            "name": name, "email": email, "phone_number": phone_number,
+            "password": password, "age": age, "gender": gender,
+            "community": community, "occupation": occupation, "state": state
+        }
+        
+        # Send OTP via SMS
+        sms_sent = send_otp_sms(phone_number, otp)
+        
+        if sms_sent:
+            flash(f"OTP sent to {phone_number}. Please check your SMS.", "success")
+        else:
+            # Fallback: show OTP in flash (dev mode)
+            flash(f"SMS service unavailable. Your OTP is: {otp}", "warning")
+        
+        return render_template("signup_otp.html", phone=phone_number)
+>>>>>>> a020675087b727f059f81924023580ac3e3efa17
 
     return render_template("signup.html", clerk_publishable_key=clerk_key)
 
@@ -630,18 +724,57 @@ def login():
     clerk_key = os.environ.get("CLERK_PUBLISHABLE_KEY", "")
 
     if request.method == "POST":
+        # Check if OTP verification step
+        if request.form.get("otp_step") == "verify":
+            stored_otp = session.get("login_otp")
+            stored_user_id = session.get("login_user_id")
+            user_otp = request.form.get("otp", "").strip()
+            
+            if not stored_otp or not stored_user_id:
+                flash("Session expired. Please log in again.", "danger")
+                return redirect(url_for("main.login"))
+            
+            if user_otp == stored_otp:
+                user = models.get_user_by_id(stored_user_id)
+                session.pop("login_otp", None)
+                session.pop("login_user_id", None)
+                session["user_id"] = user["id"]
+                session["user_name"] = user["name"]
+                flash(f"Welcome back, {user['name']}!", "success")
+                return redirect(url_for("main.dashboard"))
+            else:
+                flash("Invalid OTP. Please try again.", "danger")
+                return render_template("login_otp.html")
+        
+        # Initial login — verify credentials
         email    = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
 
         user = models.get_user_by_email(email)
         if user and models.verify_user_password(user, password):
-            session["user_id"]   = user["id"]
-            session["user_name"] = user["name"]
-            flash(f"Welcome back, {user['name']}!", "success")
-            return redirect(url_for("main.dashboard"))
+            # Generate OTP for 2FA
+            import random
+            otp = str(random.randint(100000, 999999))
+            session["login_otp"] = otp
+            session["login_user_id"] = user["id"]
+            
+            # Send OTP via SMS
+            phone = user.get("phone_number", "")
+            sms_sent = send_otp_sms(phone, otp)
+            
+            if sms_sent:
+                flash(f"OTP sent to your registered phone. Please check SMS.", "success")
+            else:
+                flash(f"SMS unavailable. Your OTP is: {otp}", "warning")
+            
+            return render_template("login_otp.html", phone=phone)
         else:
             flash("Invalid email or password.", "danger")
 
+<<<<<<< HEAD
+=======
+    clerk_key = os.environ.get("CLERK_PUBLISHABLE_KEY", "")
+>>>>>>> a020675087b727f059f81924023580ac3e3efa17
     return render_template("login.html", clerk_publishable_key=clerk_key)
 
 
