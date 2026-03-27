@@ -1145,6 +1145,67 @@ Based on the user profile vs scheme criteria, return ONLY valid JSON (no markdow
 
 
 # =============================================================================
+# GOOGLE OAUTH  (direct — no Clerk dependency)
+# =============================================================================
+
+def get_google_oauth():
+    from authlib.integrations.requests_client import OAuth2Session
+    client_id     = os.environ.get("GOOGLE_CLIENT_ID", "")
+    client_secret = os.environ.get("GOOGLE_CLIENT_SECRET", "")
+    return OAuth2Session(
+        client_id,
+        client_secret,
+        scope="openid email profile",
+        redirect_uri=os.environ.get("GOOGLE_REDIRECT_URI", "http://localhost:5000/auth/google/callback"),
+    )
+
+
+@bp.route("/auth/google")
+def google_login():
+    client_id = os.environ.get("GOOGLE_CLIENT_ID", "")
+    if not client_id:
+        flash("Google login is not configured.", "warning")
+        return redirect(url_for("main.login"))
+    oauth = get_google_oauth()
+    uri, state = oauth.create_authorization_url("https://accounts.google.com/o/oauth2/v2/auth")
+    session["oauth_state"] = state
+    return redirect(uri)
+
+
+@bp.route("/auth/google/callback")
+def google_callback():
+    client_id     = os.environ.get("GOOGLE_CLIENT_ID", "")
+    client_secret = os.environ.get("GOOGLE_CLIENT_SECRET", "")
+    if not client_id:
+        flash("Google login is not configured.", "warning")
+        return redirect(url_for("main.login"))
+    try:
+        from authlib.integrations.requests_client import OAuth2Session
+        redirect_uri = os.environ.get("GOOGLE_REDIRECT_URI", "http://localhost:5000/auth/google/callback")
+        oauth = OAuth2Session(client_id, client_secret, state=session.get("oauth_state"), redirect_uri=redirect_uri)
+        token = oauth.fetch_token(
+            "https://oauth2.googleapis.com/token",
+            authorization_response=request.url,
+        )
+        resp  = oauth.get("https://www.googleapis.com/oauth2/v3/userinfo")
+        info  = resp.json()
+        email = info.get("email", "").lower()
+        name  = info.get("name") or info.get("given_name") or email.split("@")[0]
+        if not email:
+            flash("Could not get email from Google.", "danger")
+            return redirect(url_for("main.login"))
+        user = models.get_or_create_google_user(name, email)
+        session["user_id"]   = user["id"]
+        session["user_name"] = user["name"]
+        flash(f"Welcome, {user['name']}!", "success")
+        return redirect(url_for("main.dashboard"))
+    except Exception as e:
+        print(f"[Google OAuth Error] {e}")
+        flash("Google sign-in failed. Please try again.", "danger")
+        return redirect(url_for("main.login"))
+
+
+# =============================================================================
 # END OF ROUTES
 # =============================================================================
 

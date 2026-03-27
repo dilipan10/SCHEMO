@@ -41,12 +41,12 @@
 
             <div class="auth-separator">OR</div>
 
-            <!-- Clerk Google Sign-In -->
+            <!-- Google Sign-In -->
             <div id="clerk-google-btn-wrap">
-                <button type="button" class="btn btn-google btn-full" id="googleLoginBtn">
+                <a href="{{ url_for('main.google_login') }}" class="btn btn-google btn-full">
                     <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="G" class="google-logo">
-                    <span id="googleBtnText">Continue with Google</span>
-                </button>
+                    <span>Continue with Google</span>
+                </a>
             </div>
             <div id="googleError" style="color:var(--danger); font-size:0.8rem; margin-top:0.5rem; display:none; text-align:center;"></div>
             <p id="edgeWarning" style="display:none;color:#F59E0B;font-size:.75rem;text-align:center;margin-top:.4rem;">
@@ -83,66 +83,6 @@
             icon.setAttribute('data-lucide', 'eye');
         }
         lucide.createIcons();
-    }
-
-    // ── Clerk Google Sign-In ──────────────────────────────────────
-    const CLERK_PK = "{{ clerk_publishable_key }}";
-
-    async function initClerkGoogle() {
-        if (!CLERK_PK || CLERK_PK === "None" || CLERK_PK.includes("your_clerk")) {
-            document.getElementById('googleLoginBtn').addEventListener('click', () => {
-                document.getElementById('googleError').textContent = "Google login is not configured yet. Please use email/password.";
-                document.getElementById('googleError').style.display = 'block';
-            });
-            return;
-        }
-
-        // Load Clerk JS
-        const script = document.createElement('script');
-        script.src = `https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js`;
-        script.setAttribute('data-clerk-publishable-key', CLERK_PK);
-        document.head.appendChild(script);
-
-        script.onload = async () => {
-            try {
-                const clerk = new window.Clerk(CLERK_PK);
-                await clerk.load();
-
-            document.getElementById('googleLoginBtn').addEventListener('click', async () => {
-                const btn = document.getElementById('googleLoginBtn');
-                const btnText = document.getElementById('googleBtnText');
-                const errDiv = document.getElementById('googleError');
-                try {
-                    btn.disabled = true;
-                    btnText.textContent = "Signing in...";
-                    errDiv.style.display = 'none';
-
-                    await clerk.signIn.authenticateWithRedirect({
-                        strategy: "oauth_google",
-                        redirectUrl: window.location.origin + "/sso-callback",
-                        redirectUrlComplete: window.location.origin + "/sso-callback"
-                    });
-                } catch (err) {
-                    errDiv.textContent = "Google sign-in failed: " + (err.message || err);
-                    errDiv.style.display = 'block';
-                    btn.disabled = false;
-                    btnText.textContent = "Continue with Google";
-                }
-            });
-            } catch (initErr) {
-                console.error('[Clerk init error]', initErr);
-                document.getElementById('googleError').textContent = "Google login unavailable. Please use email/password.";
-                document.getElementById('googleError').style.display = 'block';
-            }
-        };
-    }
-
-    initClerkGoogle();
-
-    // Warn Edge users
-    if (navigator.userAgent.includes('Edg/')) {
-        const w = document.getElementById('edgeWarning');
-        if (w) w.style.display = 'block';
     }
 </script>
 {% endblock %}
