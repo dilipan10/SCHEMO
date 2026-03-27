@@ -13,7 +13,11 @@ services:
         sync: false
       - key: GROQ_API_KEY
         sync: false
-      - key: CLERK_PUBLISHABLE_KEY
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REDIRECT_URI
         sync: false
       - key: ADMIN_USERNAME
         sync: false
