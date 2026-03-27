@@ -177,6 +177,13 @@
       </div>
     </div>
 
+    <!-- Scheme search bar -->
+    <div class="chat-search-wrap" id="chatSearchWrap">
+      <input type="text" id="chatSchemeSearch" placeholder="🔍 Search schemes in database…" autocomplete="off"
+        style="width:100%;padding:.6rem 1rem;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#fff;font-size:.85rem;outline:none;">
+      <div id="chatSearchResults" style="display:none;max-height:220px;overflow-y:auto;background:#1a1a2e;border:1px solid rgba(255,255,255,0.1);border-radius:10px;margin-top:.4rem;"></div>
+    </div>
+
     <!-- Quick reply chips (horizontal scroll) -->
     <div class="quick-replies" id="quickReplies">
       <button class="quick-chip" data-msg="I am a student looking for scholarships">🎓 Scholarships</button>
@@ -190,8 +197,17 @@
     <div class="chat-footer">
       <div class="chat-input-wrap">
         <textarea class="chat-input" id="chatInput" rows="1"
-          placeholder="Type your message..." aria-label="Chat message"></textarea>
+          placeholder="Type or speak your message..." aria-label="Chat message"></textarea>
       </div>
+      <!-- Mic button -->
+      <button class="chat-mic-btn" id="chatMicBtn" aria-label="Voice input" title="Speak your message">
+        <svg id="micIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+          <line x1="12" y1="19" x2="12" y2="23"></line>
+          <line x1="8" y1="23" x2="16" y2="23"></line>
+        </svg>
+      </button>
       <button class="chat-send-btn" id="chatSendBtn" aria-label="Send message">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <line x1="22" y1="2" x2="11" y2="13"></line>
@@ -215,6 +231,7 @@
     const chatBody   = document.getElementById('chatBody');
     const chatInput  = document.getElementById('chatInput');
     const sendBtn    = document.getElementById('chatSendBtn');
+    const micBtn     = document.getElementById('chatMicBtn');
     const clearBtn   = document.getElementById('chatClearBtn');
     const quickReplies = document.getElementById('quickReplies');
     const welcomeBlock = document.getElementById('chatWelcome');
@@ -277,6 +294,70 @@
     // Init send btn state
     sendBtn.disabled = true;
 
+    // ── Voice Input (Speech Recognition) ──────────────────────
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition = null;
+    let isListening = false;
+
+    if (SpeechRecognition && micBtn) {
+      recognition = new SpeechRecognition();
+      recognition.lang = 'en-IN';
+      recognition.interimResults = true;
+      recognition.maxAlternatives = 1;
+
+      recognition.onstart = () => {
+        isListening = true;
+        micBtn.classList.add('listening');
+        micBtn.title = 'Listening… click to stop';
+        chatInput.placeholder = '🎙️ Listening…';
+      };
+
+      recognition.onresult = (e) => {
+        const transcript = Array.from(e.results)
+          .map(r => r[0].transcript).join('');
+        chatInput.value = transcript;
+        chatInput.style.height = 'auto';
+        chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px';
+        sendBtn.disabled = !transcript.trim();
+        // Auto-send on final result
+        if (e.results[e.results.length - 1].isFinal) {
+          stopListening();
+          if (transcript.trim()) setTimeout(triggerSend, 300);
+        }
+      };
+
+      recognition.onerror = (e) => {
+        console.warn('[Mic]', e.error);
+        stopListening();
+        if (e.error === 'not-allowed') {
+          chatInput.placeholder = '⚠️ Mic permission denied';
+          setTimeout(() => { chatInput.placeholder = 'Type or speak your message...'; }, 3000);
+        }
+      };
+
+      recognition.onend = () => stopListening();
+
+      function stopListening() {
+        isListening = false;
+        micBtn.classList.remove('listening');
+        micBtn.title = 'Voice input';
+        chatInput.placeholder = 'Type or speak your message...';
+      }
+
+      micBtn.addEventListener('click', () => {
+        if (isListening) {
+          recognition.stop();
+        } else {
+          chatInput.value = '';
+          sendBtn.disabled = true;
+          try { recognition.start(); } catch(e) { console.warn(e); }
+        }
+      });
+    } else if (micBtn) {
+      // Browser doesn't support — hide mic button
+      micBtn.style.display = 'none';
+    }
+
     function triggerSend() {
       const txt = chatInput.value.trim();
       if (!txt || isBusy) return;
@@ -288,6 +369,60 @@
       chatInput.style.height = 'auto';
       sendBtn.disabled = true;
       sendMessage(txt);
+    }
+
+    // ── Scheme Search in chatbot ───────────────────────────────
+    const schemeSearchInput = document.getElementById('chatSchemeSearch');
+    const schemeSearchResults = document.getElementById('chatSearchResults');
+    let searchTimer = null;
+
+    if (schemeSearchInput) {
+      schemeSearchInput.addEventListener('input', () => {
+        clearTimeout(searchTimer);
+        const q = schemeSearchInput.value.trim();
+        if (q.length < 2) { schemeSearchResults.style.display = 'none'; return; }
+        searchTimer = setTimeout(() => {
+          fetch(`/api/schemes/chatbot-search?q=${encodeURIComponent(q)}`)
+            .then(r => r.json())
+            .then(schemes => {
+              schemeSearchResults.innerHTML = '';
+              if (!schemes.length) {
+                schemeSearchResults.innerHTML = '<div style="padding:.75rem 1rem;color:#94a3b8;font-size:.85rem;">No schemes found</div>';
+              } else {
+                schemes.forEach(s => {
+                  const div = document.createElement('div');
+                  div.style.cssText = 'padding:.75rem 1rem;border-bottom:1px solid rgba(255,255,255,0.06);cursor:pointer;transition:background .15s;';
+                  div.innerHTML = `
+                    <div style="font-weight:700;color:#fff;font-size:.85rem;">${s.scheme_name}</div>
+                    <div style="color:#94a3b8;font-size:.75rem;margin-top:.2rem;">${s.description}</div>
+                    <div style="display:flex;gap:.5rem;margin-top:.4rem;flex-wrap:wrap;">
+                      <span style="font-size:.7rem;background:rgba(59,130,246,0.15);color:#60a5fa;padding:.15rem .5rem;border-radius:99px;">${s.community}</span>
+                      ${s.official_link ? `<a href="${s.official_link}" target="_blank" style="font-size:.7rem;color:#10B981;text-decoration:underline;">Apply →</a>` : ''}
+                    </div>`;
+                  div.addEventListener('mouseenter', () => div.style.background = 'rgba(255,255,255,0.05)');
+                  div.addEventListener('mouseleave', () => div.style.background = '');
+                  div.addEventListener('click', () => {
+                    chatInput.value = `Tell me about ${s.scheme_name}`;
+                    schemeSearchResults.style.display = 'none';
+                    schemeSearchInput.value = '';
+                    sendBtn.disabled = false;
+                    triggerSend();
+                  });
+                  schemeSearchResults.appendChild(div);
+                });
+              }
+              schemeSearchResults.style.display = 'block';
+            })
+            .catch(() => { schemeSearchResults.style.display = 'none'; });
+        }, 350);
+      });
+
+      // Close on outside click
+      document.addEventListener('click', e => {
+        if (!schemeSearchInput.contains(e.target) && !schemeSearchResults.contains(e.target)) {
+          schemeSearchResults.style.display = 'none';
+        }
+      });
     }
 
     // ── Core send function ─────────────────────────────────────

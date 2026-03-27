@@ -231,6 +231,15 @@
 
             </form>
 
+            <div class="auth-separator" style="margin:1.5rem 0;">OR</div>
+
+            <!-- Clerk Google Sign-Up -->
+            <button type="button" class="btn btn-google btn-full" id="googleSignupBtn">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="G" class="google-logo">
+                <span id="googleSignupBtnText">Sign up with Google</span>
+            </button>
+            <div id="googleSignupError" style="color:var(--danger); font-size:0.8rem; margin-top:0.5rem; display:none; text-align:center;"></div>
+
             <div class="auth-footer" style="border-top:1px solid var(--glass-border); padding-top:1.5rem; margin-top:1.5rem;">
                 Already have an account?
                 <a href="{{ url_for('main.login') }}" style="font-weight:700; color:var(--primary-light);">
@@ -255,6 +264,54 @@
         }
         lucide.createIcons();
     }
+
+    // ── Clerk Google Sign-Up ──────────────────────────────────────
+    const CLERK_PK = "{{ clerk_publishable_key }}";
+
+    async function initClerkGoogleSignup() {
+        const btn     = document.getElementById('googleSignupBtn');
+        const btnText = document.getElementById('googleSignupBtnText');
+        const errDiv  = document.getElementById('googleSignupError');
+
+        if (!CLERK_PK || CLERK_PK === "None" || CLERK_PK.includes("your_clerk")) {
+            btn.addEventListener('click', () => {
+                errDiv.textContent = "Google sign-up is not configured yet.";
+                errDiv.style.display = 'block';
+            });
+            return;
+        }
+
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js';
+        script.setAttribute('data-clerk-publishable-key', CLERK_PK);
+        document.head.appendChild(script);
+
+        script.onload = async () => {
+            const clerk = window.Clerk;
+            await clerk.load();
+
+            btn.addEventListener('click', async () => {
+                try {
+                    btn.disabled = true;
+                    btnText.textContent = "Redirecting to Google…";
+                    errDiv.style.display = 'none';
+
+                    await clerk.signUp.authenticateWithRedirect({
+                        strategy: "oauth_google",
+                        redirectUrl: window.location.origin + "/sso-callback",
+                        redirectUrlComplete: window.location.origin + "/sso-callback",
+                    });
+                } catch (err) {
+                    errDiv.textContent = "Google sign-up failed: " + (err.message || err);
+                    errDiv.style.display = 'block';
+                    btn.disabled = false;
+                    btnText.textContent = "Sign up with Google";
+                }
+            });
+        };
+    }
+
+    initClerkGoogleSignup();
 </script>
 
 {% endblock %}

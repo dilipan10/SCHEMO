@@ -39,17 +39,21 @@ from routes import bp
 app.register_blueprint(bp)
 
 
-# ── Bootstrap default admin on first start ──────────────────────────────
+# ── Bootstrap default admin ──────────────────────────────────────────────
 def seed_admin():
-    """Create a default admin account if none exists yet."""
-    if not get_admin_by_username("admin"):
-        create_admin("admin", "admin123")
-        print("[Schemo] Default admin created  →  username: admin | password: admin123")
+    """Create admin from .env credentials (ADMIN_USERNAME / ADMIN_PASSWORD)."""
+    username = os.environ.get("ADMIN_USERNAME", "admin")
+    password = os.environ.get("ADMIN_PASSWORD", "admin123")
+    if not get_admin_by_username(username):
+        create_admin(username, password)
+        print(f"[Schemo] Admin created  →  username: {username}")
+
+# Run on startup (works for both gunicorn and direct run)
+try:
+    seed_admin()
+except Exception as e:
+    print(f"[WARN] Could not seed admin: {e}")
 
 
 if __name__ == "__main__":
-    try:
-        seed_admin()
-    except Exception as e:
-        print(f"[WARN] Could not seed admin (DB might not be ready): {e}")
     app.run(debug=True, host="0.0.0.0", port=5000)

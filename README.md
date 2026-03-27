@@ -1,6 +1,6 @@
 # Schemo – Government Scheme Aggregator Portal
 
-> A full-stack Flask + MySQL web application where Indian citizens can register, log in, and discover government welfare schemes they are eligible for.
+> A full-stack Flask + Supabase web app where Indian citizens can register, log in, and discover government welfare schemes they are eligible for — with AI-powered matching, voice input, real-time scraping, and WhatsApp alerts.
 
 ---
 
@@ -9,278 +9,259 @@
 ```
 schemo/
 ├── backend/
-│   ├── app.py          ← Flask entry point (run this)
+│   ├── app.py          ← Flask entry point
 │   ├── routes.py       ← All URL routes (Blueprint)
-│   ├── models.py       ← Database query functions
-│   └── database.py     ← MySQL connection utility
+│   ├── models.py       ← Supabase query functions
+│   ├── database.py     ← Supabase client setup
+│   ├── sms.py          ← MSG91 OTP + WhatsApp
+│   └── scraper.py      ← Web scraper (MyScheme.gov.in, India.gov.in)
 │
 ├── frontend/
 │   ├── templates/
-│   │   ├── base.html         ← Shared layout (glassmorphic navbar, footer, toasts)
-│   │   ├── index.html        ← Landing page (hero, features, how-it-works, CTA)
-│   │   ├── signup.html       ← User registration (split layout, sticky info panel)
-│   │   ├── login.html        ← User login (split layout with benefit panel)
-│   │   ├── dashboard.html    ← User dashboard (stat cards + eligible schemes)
-│   │   ├── schemes.html      ← Public schemes listing (glass cards + filter bar)
-│   │   ├── admin_login.html  ← Admin login
-│   │   ├── admin.html        ← Admin dashboard (sidebar + tables)
-│   │   └── scheme_form.html  ← Add / Edit scheme form
+│   │   ├── base.html           ← Shared layout (navbar, footer, chatbot widget)
+│   │   ├── index.html          ← Landing page
+│   │   ├── signup.html         ← User registration (+ Google OAuth)
+│   │   ├── login.html          ← User login (+ Google OAuth)
+│   │   ├── sso_callback.html   ← Clerk Google OAuth callback handler
+│   │   ├── dashboard.html      ← User dashboard (AI scores, tracker, dark mode)
+│   │   ├── schemes.html        ← Public schemes listing with filters
+│   │   ├── admin_login.html    ← Admin login
+│   │   ├── admin.html          ← Admin dashboard (CRUD + analytics)
+│   │   ├── scheme_form.html    ← Add / Edit scheme form
+│   │   ├── upload_csv.html     ← Bulk CSV scheme import
+│   │   └── scrape.html         ← Live scrape from govt websites
 │   └── static/
-│       ├── css/style.css     ← Modern dark SaaS stylesheet (glassmorphism, gradients)
-│       └── js/script.js      ← Interactivity, animations & form validation
+│       ├── css/style.css       ← Dark SaaS stylesheet (glassmorphism)
+│       └── js/script.js        ← Interactivity and animations
 │
 ├── database/
-│   └── schema.sql      ← Tables + sample data
+│   └── schema.sql      ← Reference schema (actual DB is Supabase)
 │
+├── render.yaml         ← Render.com deployment config
+├── Procfile            ← Gunicorn start command
 ├── requirements.txt
 └── README.md
 ```
 
 ---
 
-## ⚙️ Setup Instructions
+## ⚙️ Setup
 
-### Step 1 – Prerequisites
+### Prerequisites
 - Python 3.10+
-- MySQL Server 8.0+
-- pip
+- Supabase account (free tier works)
 
----
-
-### Step 2 – Configure MySQL credentials
-
-Open `backend/database.py` and update your MySQL credentials:
-
-```python
-DB_CONFIG = {
-    "host":     "localhost",
-    "user":     "root",
-    "password": "YOUR_PASSWORD_HERE",   # ← change this
-    "database": "schemo_db",
-}
-```
-
----
-
-### Step 3 – Create the database and tables
-
-Log into MySQL and run the schema file:
+### Step 1 — Clone and install
 
 ```bash
-# In your terminal / MySQL shell:
-mysql -u root -p < database/schema.sql
-```
-
-Or open MySQL Workbench / phpMyAdmin and execute the contents of `database/schema.sql`.
-
-This will:
-- Create the `schemo_db` database
-- Create the `users`, `admins`, and `schemes` tables
-- Insert **12 sample government schemes**
-
----
-
-### Step 4 – Install Python dependencies
-
-```bash
-# From the project root folder
 pip install -r requirements.txt
 ```
 
----
+### Step 2 — Configure `.env`
 
-### Step 5 – Run the Flask application
+```env
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_KEY=your_service_role_key
+FLASK_SECRET_KEY=your-secret-key
+GROQ_API_KEY=your_groq_api_key
+CLERK_PUBLISHABLE_KEY=your_clerk_pk
+MSG91_AUTH_KEY=your_msg91_key
+MSG91_TEMPLATE_ID=your_dlt_template_id
+MSG91_WHATSAPP_NUMBER=your_whatsapp_number
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=your_password
+```
+
+### Step 3 — Run
 
 ```bash
-cd backend
-python app.py
+python backend/app.py
 ```
 
-You should see:
-
-```
-[Schemo] Default admin created  →  username: admin | password: admin123
- * Running on http://0.0.0.0:5000
-```
-
-Open your browser at **http://127.0.0.1:5000**
+Open **http://127.0.0.1:5000**
 
 ---
 
-## 🔐 Default Admin Credentials
+## 🔐 Admin Access
 
 | Username | Password |
 |----------|----------|
-| `admin`  | `admin123` |
+| Set in `.env` → `ADMIN_USERNAME` | `ADMIN_PASSWORD` |
 
-> Admin login is at: **http://127.0.0.1:5000/admin/login**
-
----
-
-## 🌐 Application Routes
-
-| Route                          | Description                      |
-|-------------------------------|----------------------------------|
-| `/`                           | Landing page                     |
-| `/signup`                     | User registration                |
-| `/login`                      | User login                       |
-| `/logout`                     | Logout                           |
-| `/dashboard`                  | User dashboard (login required)  |
-| `/schemes`                    | Browse all schemes (public)      |
-| `/admin/login`                | Admin login                      |
-| `/admin/dashboard`            | Admin dashboard (CRUD)           |
-| `/admin/scheme/add`           | Add new scheme                   |
-| `/admin/scheme/edit/<id>`     | Edit a scheme                    |
-| `/admin/scheme/delete/<id>`   | Delete a scheme                  |
-| `/admin/user/delete/<id>`     | Delete a user                    |
+Admin login: **http://127.0.0.1:5000/admin/login**
 
 ---
 
-## 🗄️ Database Schema (Key Tables)
+## 🌐 Routes
+
+| Route | Description |
+|---|---|
+| `/` | Landing page |
+| `/signup` | Register (email/password or Google) |
+| `/login` | Login (email/password or Google) |
+| `/sso-callback` | Clerk Google OAuth callback |
+| `/logout` | Logout |
+| `/dashboard` | User dashboard (login required) |
+| `/schemes` | Browse all schemes (public) |
+| `/admin/login` | Admin login |
+| `/admin/dashboard` | Admin panel |
+| `/admin/scheme/add` | Add scheme |
+| `/admin/scheme/edit/<id>` | Edit scheme |
+| `/admin/scheme/delete/<id>` | Delete scheme |
+| `/admin/scheme/upload-csv` | Bulk CSV import |
+| `/admin/scheme/sample-csv` | Download sample CSV |
+| `/admin/scrape` | Scrape live govt websites |
+| `/api/chatbot` | AI chatbot (POST) |
+| `/api/eligibility-score` | Groq AI match score (POST) |
+| `/api/schemes/chatbot-search` | Scheme search for chatbot (GET) |
+| `/api/schemo/stats` | Admin analytics (GET) |
+
+---
+
+## ✅ Current Features
+
+### Authentication
+- Email + password login/signup (direct, no OTP step)
+- Google OAuth via Clerk (login + signup)
+- Session-based auth with `@login_required` / `@admin_required`
+- Passwords hashed with Werkzeug PBKDF2-SHA256
+
+### User Dashboard
+- Eligible schemes matched by age, community, occupation
+- **AI Eligibility Score** — Groq Llama 3.3 scores each scheme 0–100% with reason
+- **Profile Completion Bar** — shows % of profile filled
+- **Deadline Badge** — red pulsing badge when deadline ≤ 7 days
+- **Application Tracker** — Saved / Applied / Documents Sent / Approved (localStorage)
+- **Voice Read-Aloud** — 🔊 button reads scheme details using browser TTS
+- **Search & Filter** — live search + status filter on dashboard
+- **Dark / Light Mode** toggle (persists in localStorage)
+
+### Schemes
+- Public scheme listing with search, community filter, status filter
+- Scheme detail modal with eligibility, benefits, documents, where-to-get-docs guide
+- Google Maps links for nearest Esai Maiyam / CSC / District Collector
+
+### AI Chatbot (SchemoBot)
+- Powered by Groq Llama 3.3 with Supabase dataset as context
+- Answers from your real scheme database first
+- Built-in keyword fallback (no API key needed)
+- **Voice input** — mic button for speech-to-text
+- **Scheme search box** inside chatbot — search DB live, click to ask bot
+- Tamil language support
+
+### Admin Panel
+- User management (view, delete)
+- Scheme CRUD (add, edit, delete)
+- **Bulk CSV upload** with sample CSV download
+- **Live web scraping** — scrape MyScheme.gov.in + India.gov.in, auto-import new schemes
+- Analytics dashboard (user stats, trends, charts)
+
+### Notifications
+- **WhatsApp alerts** via MSG91 — sent to matching users when a new scheme is added
+- **SMS OTP** via MSG91 (requires DLT template approval)
+
+### Deployment
+- Ready for **Render.com** (free tier)
+- `render.yaml` + `Procfile` included
+- Gunicorn production server
+
+---
+
+## 🗄️ Database (Supabase)
 
 ### `users`
 | Column | Type | Notes |
 |---|---|---|
-| `id` | INT, PK | Auto increment |
-| `name` | VARCHAR | Full name |
-| `email` | VARCHAR | Unique login identifier |
-| `phone_number` | VARCHAR(10) | Unique, 10 digits |
-| `password` | VARCHAR | Hashed with Werkzeug PBKDF2 |
-| `age` | INT | Used for scheme eligibility |
-| `gender` | VARCHAR | Male / Female / Other |
-| `community` | VARCHAR | General, OBC, SC, ST, etc. |
-| `occupation` | VARCHAR | Student, Farmer, etc. |
-| `state` | VARCHAR | Indian state or UT |
-| `created_at` | DATETIME | Registration timestamp |
+| `id` | UUID | Primary key |
+| `name` | text | Full name |
+| `email` | text | Unique |
+| `phone_number` | text | 10-digit Indian number |
+| `password` | text | Hashed (PBKDF2) |
+| `age` | int | For eligibility matching |
+| `gender` | text | Male / Female / Other |
+| `community` | text | General, OBC, SC, ST, EWS, Minority |
+| `occupation` | text | Student, Farmer, etc. |
+| `state` | text | Indian state or UT |
+| `created_at` | timestamptz | Auto |
 
 ### `schemes`
 | Column | Type | Notes |
 |---|---|---|
-| `id` | INT, PK | Auto increment |
-| `scheme_name` | VARCHAR | Scheme title |
-| `description` | TEXT | Short description |
-| `community` | VARCHAR | Target community (or "All") |
-| `min_age` / `max_age` | INT | Eligibility age range |
-| `max_income` | BIGINT | Max annual income (0 = no limit) |
-| `benefits` | TEXT | What the scheme offers |
-| `eligibility` | TEXT | Eligibility conditions |
-| `documents_required` | TEXT | Required documents list |
-| `deadline` | DATE | Application deadline (nullable) |
-| `official_link` | VARCHAR | Official govt portal URL |
+| `id` | int | Primary key |
+| `scheme_name` | text | |
+| `description` | text | |
+| `eligibility` | text | |
+| `community` | text | Comma-separated or "All" |
+| `min_age` / `max_age` | int | Age range |
+| `max_income` | float | 0 = no limit |
+| `benefits` | text | |
+| `documents_required` | text | |
+| `deadline` | date | Nullable |
+| `official_link` | text | |
 
----
-
-## 🎯 Eligibility Logic
-
-When a logged-in user visits their dashboard, the app queries schemes where:
-1. The **community** field matches the user's community OR is set to `All`
-2. The user's **age** falls within the scheme's `min_age`–`max_age` range
-
-Deadline logic is applied after fetching:
-- If `deadline < today` → scheme is marked **Expired** (Apply button disabled)
-- If `deadline >= today` → scheme is **Active**
-- If no deadline → scheme is **Ongoing**
-
----
-
-## 🎨 UI/UX Design System (v2 – 18 Mar 2026)
-
-The UI was fully redesigned to a modern dark SaaS aesthetic with:
-
-- **Theme:** Deep dark background (`#0A0A0A`) with blue (`#3B82F6`) and purple (`#8B5CF6`) gradient accents
-- **Glassmorphism:** Semi-transparent cards with `backdrop-filter: blur(16px)` throughout
-- **Icons:** [Lucide Icons](https://lucide.dev) loaded via CDN
-- **Typography:** Inter (Google Fonts) — 300 to 900 weight range
-- **Animations:** Intersection Observer staggered fade-in for cards and sections
-- **Toasts:** Auto-dismiss flash notifications replacing plain flash banners
-- **Components updated:**
-  - Sticky glassmorphic navbar with Lucide brand icon
-  - Hero section with gradient heading and animated CTA
-  - Feature & step cards with hover lift effect
-  - Auth pages with split-screen layout (form + info panel)
-  - Dashboard with stat cards and profile banner
-  - Scheme cards with status badges (Active / Expired / Ongoing)
-  - Admin panel with sticky sidebar and modern data tables
-
----
-
-## 🛡️ Security
-
-- Passwords are hashed using **Werkzeug PBKDF2-SHA256** (never stored as plain text)
-- Sessions are server-side with `HttpOnly` cookies
-- All admin routes are protected by an `@admin_required` decorator
-- All user routes are protected by a `@login_required` decorator
-- Phone number validated to exactly 10 digits (frontend + backend)
+### `admins`
+| Column | Type |
+|---|---|
+| `id` | int |
+| `username` | text |
+| `password` | text (hashed) |
 
 ---
 
 ## 🖥️ Tech Stack
 
-| Layer      | Technology                                  |
-|------------|---------------------------------------------|
-| Backend    | Python 3.10+, Flask 3.x                     |
-| Database   | MySQL 8, mysql-connector-python             |
-| Frontend   | HTML5, Vanilla CSS3, JavaScript (ES6+)      |
-| Icons      | Lucide Icons (CDN)                          |
-| Fonts      | Google Fonts — Inter                        |
-| Auth       | Werkzeug PBKDF2-SHA256 + Flask sessions     |
+| Layer | Technology |
+|---|---|
+| Backend | Python 3.10+, Flask 3.x, Gunicorn |
+| Database | Supabase (PostgreSQL) |
+| AI | Groq API — Llama 3.3 70B |
+| Auth | Clerk (Google OAuth) + Flask sessions |
+| SMS/WhatsApp | MSG91 |
+| Scraping | requests + BeautifulSoup4 |
+| Frontend | HTML5, Vanilla CSS3, JavaScript ES6+ |
+| Icons | Lucide Icons (CDN) |
+| Fonts | Google Fonts — Inter |
+| Deployment | Render.com |
 
 ---
 
 ## 📋 Changelog
 
-### v2.2 – 19 March 2026 (Admin Insights & Security)
-- ✅ **Admin Dashboard Overhaul** 
-  - Redesigned with a premium glassmorphism sidebar (Lucide icons replacing emojis).
-  - Added modern topbar with Search bar and Admin Profile Badge.
-  - Interactive "Insights" tab with skeleton loading states and responsive charts.
-- ✅ **Real-Time Analytics Engine**
-  - Integrated `get_user_stats` API with dynamic trend calculations (Growth rates).
-  - Dynamic user demographic charts (Occupation, Gender, Community).
-  - Scheme status (Active/Expired) now calculated in real-time on the dashboard.
-- ✅ **Enhanced Security & Validation**
-  - Unique Phone Number check during registration to prevent duplicate signups.
-  - Improved Signup error handling (sanitizing raw database errors).
-  - Expanded `occupation` column in DB to prevent data truncation.
-- ✅ **UI/UX Refinements**
-  - Unified table design for users and schemes with modern action icons.
-  - Professionalized Chatbot interface (visual polish).
-  - General CSS tweaks for better contrast and dark theme consistency.
+### v3.0 — 27 March 2026
+- ✅ Migrated database from MySQL → **Supabase** (PostgreSQL)
+- ✅ Added **Google OAuth** via Clerk (login + signup)
+- ✅ Added **Groq AI eligibility score** per scheme card (Llama 3.3)
+- ✅ Added **AI chatbot** powered by Groq with live Supabase dataset context
+- ✅ Added **voice input** (mic button) in chatbot
+- ✅ Added **scheme search** inside chatbot widget
+- ✅ Added **web scraper** (MyScheme.gov.in + India.gov.in)
+- ✅ Added **bulk CSV upload** for schemes
+- ✅ Added **WhatsApp alerts** via MSG91 on new scheme added
+- ✅ Added **application tracker** (Saved/Applied/Documents Sent/Approved)
+- ✅ Added **profile completion bar**
+- ✅ Added **deadline badge** (red pulse when ≤ 7 days)
+- ✅ Added **dark/light mode** toggle
+- ✅ Added **voice read-aloud** on scheme cards
+- ✅ Added **admin analytics** with charts
+- ✅ Removed OTP step from login/signup (direct email+password)
+- ✅ Removed MySQL dependency entirely
+- ✅ Deployment config for Render.com
 
-### v2.1 – 18 March 2026 (UI/UX Polish Pass)
-- ✅ Navbar brand redesigned — gradient icon box (blue→purple square) replacing plain icon
-- ✅ Removed stray separator dot from navbar center
-- ✅ Admin nav link now shows Shield icon when logged in as admin
-- ✅ Hero section — added subtle mesh grid overlay (60×60px) that fades at edges for premium tech feel
-- ✅ Hero background upgraded to 3-layer elliptical gradient radial glows (deeper depth)
-- ✅ Hero stat numbers (12+, 8, 28+) now use blue→purple gradient text
-- ✅ Toast notifications now prefixed with contextual Lucide icons (✅ success, ⚠️ warning, ℹ️ info, ❌ error)
-- ✅ Footer links updated with Lucide icons per link
-- ✅ Schemes page hero centred with proper padding and constrained subtitle width
-- ✅ `base.html` cleaned up and footer grid improved
+### v2.2 — 19 March 2026
+- ✅ Admin dashboard overhaul with glassmorphism sidebar
+- ✅ Real-time analytics engine with trend calculations
+- ✅ Unique phone number validation on signup
 
-### v2.0 – 18 March 2026
-- ✅ Complete UI/UX overhaul to modern dark SaaS design
-- ✅ Added Lucide Icons across all templates
-- ✅ Redesigned `signup.html` — professional split layout with sticky info panel
-- ✅ Redesigned `login.html` — split layout with benefit panel
-- ✅ Redesigned `dashboard.html` — stat cards with icons, glassmorphic scheme cards
-- ✅ Redesigned `schemes.html` — glass cards, integrated filter bar, removed debug banner
-- ✅ Added phone number field to user registration (10-digit validation)
-- ✅ Added scheme deadline logic (Active / Expired / Ongoing status)
-- ✅ Fixed ₹ (Rupee) symbol encoding corruption in database
-- ✅ Added staggered fade-in scroll animations
-- ✅ Added auto-dismiss toast notifications
-- ✅ Removed "Annual Income" field from signup (not in DB schema)
-- ✅ Updated `style.css` with full glassmorphism design system
+### v2.0 — 18 March 2026
+- ✅ Complete UI/UX overhaul to dark SaaS design
+- ✅ Lucide Icons, glassmorphism, Inter font
+- ✅ Split-screen auth pages
+- ✅ Scheme deadline logic (Active/Expired/Ongoing)
 
-### v1.0 – March 2026
-- ✅ Initial project setup (Flask + MySQL)
-- ✅ User authentication (signup, login, logout)
-- ✅ Scheme eligibility matching
-- ✅ Admin panel (CRUD for schemes and users)
-- ✅ 12 sample government schemes seeded
+### v1.0 — March 2026
+- ✅ Initial Flask + MySQL setup
+- ✅ User auth, scheme eligibility matching, admin CRUD
 
 ---
 
-*Built with ❤️ for Indian citizens — Schemo*
+*Built with ❤️ for Indian citizens — Schemo v3.0*

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-hero">
+    <div class="container">
+        <h1 class="page-hero-title">🌐 Scrape Live Schemes</h1>
+        <p style="color:var(--text-muted);">Fetch real-time scheme data from MyScheme.gov.in and India.gov.in</p>
+    </div>
+</section>
+<section class="section" style="padding-top:2rem;">
+    <div class="container" style="max-width:700px;">
+        <div class="auth-card glass" style="padding:2.5rem; text-align:center;">
+            <div style="font-size:3rem; margin-bottom:1rem;">🕷️</div>
+            <h2 style="color:#fff; margin-bottom:.75rem;">Import from Government Websites</h2>
+            <p style="color:var(--text-muted); margin-bottom:2rem; line-height:1.7;">
+                This will scrape <strong style="color:#fff;">MyScheme.gov.in</strong> and <strong style="color:#fff;">India.gov.in</strong>
+                for the latest schemes and import new ones into your database automatically.
+            </p>
+            <form method="POST">
+                <button type="submit" class="btn btn-primary" style="padding:1rem 2.5rem; font-size:1rem;">
+                    <i data-lucide="download-cloud"></i> Scrape & Import Now
+                </button>
+            </form>
+            <p style="color:var(--text-dim); font-size:.8rem; margin-top:1.5rem;">
+                Duplicate schemes are automatically skipped. Only new schemes are added.
+            </p>
+            <div style="margin-top:2rem;">
+                <a href="{{ url_for('main.admin_dashboard') }}" class="btn btn-outline btn-sm">← Back to Dashboard</a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

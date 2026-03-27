@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
-<section style="min-height:80vh; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:1.5rem;">
-    <div class="glass" style="padding:2.5rem 3rem; border-radius:20px; text-align:center; max-width:400px;">
+<section style="min-height:80vh; display:flex; align-items:center; justify-content:center;">
+    <div class="glass" style="padding:2.5rem 3rem; border-radius:20px; text-align:center; max-width:420px; width:100%;">
         <div style="font-size:2.5rem; margin-bottom:1rem;">🔐</div>
         <h2 style="color:#fff; margin-bottom:.5rem;">Completing Sign-In…</h2>
         <p style="color:var(--text-muted); font-size:.95rem;">Please wait while we verify your Google account.</p>
@@ -10,43 +10,109 @@
             <span style="width:10px;height:10px;border-radius:50%;background:var(--primary);animation:bounce 1s infinite .2s;display:inline-block;"></span>
             <span style="width:10px;height:10px;border-radius:50%;background:var(--primary);animation:bounce 1s infinite .4s;display:inline-block;"></span>
         </div>
+        <p id="statusMsg" style="color:var(--text-muted); font-size:.85rem; margin-top:1.25rem; min-height:1.2em;"></p>
     </div>
 </section>
+
 <style>
 @keyframes bounce { 0%,80%,100%{transform:scale(0)} 40%{transform:scale(1)} }
 </style>
+
 <script>
-// After Clerk processes the OAuth callback, extract user info and sync with Flask
-(async function() {
-    const CLERK_PK = "{{ config.get('CLERK_PUBLISHABLE_KEY', '') }}";
-    if (!CLERK_PK) { window.location.href = '/login'; return; }
+(async function () {
+    const CLERK_PK = "{{ clerk_publishable_key }}";
+    const msg = document.getElementById('statusMsg');
 
-    const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js';
-    script.setAttribute('data-clerk-publishable-key', CLERK_PK);
-    document.head.appendChild(script);
+    function setMsg(text) { msg.textContent = text; }
+    function redirectTo(url) { window.location.href = url; }
 
-    script.onload = async () => {
+    if (!CLERK_PK || CLERK_PK === 'None' || CLERK_PK.trim() === '') {
+        setMsg('Configuration error. Redirecting…');
+        setTimeout(() => redirectTo('/login'), 1500);
+        return;
+    }
+
+    // Load Clerk JS
+    await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js';
+        s.setAttribute('data-clerk-publishable-key', CLERK_PK);
+        s.onload = resolve;
+        s.onerror = reject;
+        document.head.appendChild(s);
+    });
+
+    try {
         const clerk = window.Clerk;
         await clerk.load();
-        await clerk.handleRedirectCallback();
+
+        setMsg('Verifying with Google…');
+
+        // Handle the OAuth redirect callback
+        const result = await clerk.handleRedirectCallback();
+
+        // After callback, clerk.user should be populated
+        await clerk.load(); // reload to get fresh user state
 
         const user = clerk.user;
-        if (!user) { window.location.href = '/login'; return; }
 
-        const profileData = {
-            name: user.fullName || user.firstName || "User",
-            email: user.primaryEmailAddress?.emailAddress || "",
-        };
+        if (!user) {
+            setMsg('Could not get user info. Redirecting…');
+            setTimeout(() => redirectTo('/login'), 1500);
+            return;
+        }
 
+        setMsg('Syncing your account…');
+
+        const email = user.primaryEmailAddress?.emailAddress || '';
+        const name  = user.fullName || user.firstName || email.split('@')[0] || 'User';
+
+        if (!email) {
+            setMsg('No email found. Redirecting…');
+            setTimeout(() => redirectTo('/login'), 1500);
+            return;
+        }
+
+        // Sync with Flask backend
         const res = await fetch('/api/auth/google', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(profileData)
+            body: JSON.stringify({ name, email })
         });
+
         const data = await res.json();
-        window.location.href = data.success ? data.redirect : '/login';
-    };
+
+        if (data.success) {
+            setMsg('Success! Redirecting to dashboard…');
+            redirectTo(data.redirect);
+        } else {
+            setMsg('Sign-in failed: ' + (data.error || 'Unknown error'));
+            setTimeout(() => redirectTo('/login'), 2000);
+        }
+
+    } catch (err) {
+        console.error('[SSO Error]', err);
+        // Clerk sometimes throws on handleRedirectCallback if already handled
+        // Try to get user anyway
+        try {
+            const clerk = window.Clerk;
+            const user = clerk.user;
+            if (user) {
+                const email = user.primaryEmailAddress?.emailAddress || '';
+                const name  = user.fullName || user.firstName || 'User';
+                const res = await fetch('/api/auth/google', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email })
+                });
+                const data = await res.json();
+                if (data.success) { redirectTo(data.redirect); return; }
+            }
+        } catch (_) {}
+
+        setMsg('Something went wrong. Redirecting…');
+        setTimeout(() => redirectTo('/login'), 2000);
+    }
 })();
 </script>
 {% endblock %}

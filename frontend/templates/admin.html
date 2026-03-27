@@ -26,6 +26,12 @@
                 <a href="{{ url_for('main.admin_add_scheme') }}" class="sidebar-link sidebar-link--accent">
                     <i data-lucide="plus-circle"></i> Add New Scheme
                 </a>
+                <a href="{{ url_for('main.admin_upload_csv') }}" class="sidebar-link">
+                    <i data-lucide="upload"></i> Upload CSV
+                </a>
+                <a href="{{ url_for('main.admin_scrape') }}" class="sidebar-link">
+                    <i data-lucide="globe"></i> Scrape Live Data
+                </a>
                 <a href="{{ url_for('main.admin_logout') }}" class="sidebar-link sidebar-link--danger">
                     <i data-lucide="log-out"></i> Logout
                 </a>
@@ -221,6 +227,7 @@
                 <div class="panel-header">
                     <h2>Manage Schemes</h2>
                     <a href="{{ url_for('main.admin_add_scheme') }}" class="btn btn-primary btn-sm">➕ Add Scheme</a>
+                    <a href="{{ url_for('main.admin_upload_csv') }}" class="btn btn-outline btn-sm">⬆ Upload CSV</a>
                 </div>
 
                 <div class="table-wrapper">

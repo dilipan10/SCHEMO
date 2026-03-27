@@ -304,6 +304,10 @@ ul { list-style: none; }
 .form-control:focus { outline: none; border-color: var(--primary); background: rgba(0,0,0,0.4); box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15); }
 select.form-control { appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 1rem center; background-size: 1em; }
 select.form-control option { background: #171717; color: #fff; }
+/* Hide number input spinners */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 
 /* ══ Google Auth Button ══════════════════════════════════════════════ */
 .btn-google {
@@ -980,6 +984,24 @@ select.form-control option { background: #171717; color: #fff; }
   opacity: 0.3; cursor: not-allowed; transform: none !important;
 }
 .chat-send-btn svg { width: 18px; height: 18px; }
+
+/* mic button */
+.chat-mic-btn {
+  width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0;
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  color: #94a3b8; transition: all 0.2s ease;
+}
+.chat-mic-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+.chat-mic-btn.listening {
+  background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.4);
+  color: #ef4444; animation: micPulse 1s infinite;
+}
+.chat-mic-btn svg { width: 16px; height: 16px; }
+@keyframes micPulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); }
+  50%      { box-shadow: 0 0 0 6px rgba(239,68,68,0); }
+}
 
 /* powered by footer line */
 .chat-powered {

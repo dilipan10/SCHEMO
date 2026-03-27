@@ -115,8 +115,8 @@
 
                     await clerk.signIn.authenticateWithRedirect({
                         strategy: "oauth_google",
-                        redirectUrl: "/sso-callback",
-                        redirectUrlComplete: "/dashboard"
+                        redirectUrl: window.location.origin + "/sso-callback",
+                        redirectUrlComplete: window.location.origin + "/sso-callback"
                     });
                 } catch (err) {
                     errDiv.textContent = "Google sign-in failed: " + (err.message || err);
