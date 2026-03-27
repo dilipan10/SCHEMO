@@ -16,7 +16,7 @@ load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
 sys.path.insert(0, os.path.join(os.path.dirname(__file__)))
 
 from flask import Flask
-from models import create_admin, get_admin_by_username
+from models import create_admin, get_admin_by_username, get_all_schemes, add_scheme
 
 # ── Template & static folders live inside frontend/ ─────────────────────
 BASE_DIR      = os.path.dirname(os.path.abspath(__file__))
@@ -38,6 +38,9 @@ app.config["CLERK_PUBLISHABLE_KEY"] = os.environ.get("CLERK_PUBLISHABLE_KEY", ""
 from routes import bp
 app.register_blueprint(bp)
 
+from routes import register_error_handlers
+register_error_handlers(app)
+
 
 # ── Bootstrap default admin ──────────────────────────────────────────────
 def seed_admin():
@@ -48,11 +51,55 @@ def seed_admin():
         create_admin(username, password)
         print(f"[Schemo] Admin created  →  username: {username}")
 
+
+# ── Auto-load schemes CSV on first run ───────────────────────────────────
+def seed_schemes():
+    """Load schemes_dataset.csv into Supabase if the schemes table is empty."""
+    import csv
+    existing = get_all_schemes()
+    if existing:
+        print(f"[Schemo] Schemes already loaded ({len(existing)} found) — skipping CSV seed.")
+        return
+
+    csv_path = os.path.join(BASE_DIR, "..", "database", "schemes_dataset.csv")
+    if not os.path.exists(csv_path):
+        print("[Schemo] schemes_dataset.csv not found — skipping seed.")
+        return
+
+    added = 0
+    with open(csv_path, newline="", encoding="utf-8-sig") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            try:
+                add_scheme(
+                    name        = row["scheme_name"].strip(),
+                    description = row.get("description", "").strip(),
+                    eligibility = row.get("eligibility", "").strip(),
+                    community   = row.get("community", "All").strip(),
+                    min_age     = int(row.get("min_age", 0) or 0),
+                    max_age     = int(row.get("max_age", 100) or 100),
+                    max_income  = float(row.get("max_income", 0) or 0),
+                    benefits    = row.get("benefits", "").strip(),
+                    documents   = row.get("documents_required", "").strip(),
+                    deadline    = row.get("deadline", "").strip() or None,
+                    link        = row.get("official_link", "").strip(),
+                )
+                added += 1
+            except Exception as e:
+                print(f"[Schemo] CSV seed error on row '{row.get('scheme_name')}': {e}")
+
+    print(f"[Schemo] Seeded {added} schemes from CSV.")
+
 # Run on startup (works for both gunicorn and direct run)
 try:
     seed_admin()
 except Exception as e:
     print(f"[WARN] Could not seed admin: {e}")
+
+try:
+    seed_schemes()
+except Exception as e:
+    print(f"[WARN] Could not seed schemes: {e}")
 
 
 if __name__ == "__main__":

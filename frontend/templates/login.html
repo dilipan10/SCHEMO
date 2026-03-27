@@ -49,6 +49,9 @@
                 </button>
             </div>
             <div id="googleError" style="color:var(--danger); font-size:0.8rem; margin-top:0.5rem; display:none; text-align:center;"></div>
+            <p id="edgeWarning" style="display:none;color:#F59E0B;font-size:.75rem;text-align:center;margin-top:.4rem;">
+                ⚠️ Edge browser may block Google login. Use Chrome for best experience.
+            </p>
         </div>
 
         <!-- Illustration Panel (Right) -->
@@ -101,8 +104,9 @@
         document.head.appendChild(script);
 
         script.onload = async () => {
-            const clerk = window.Clerk;
-            await clerk.load();
+            try {
+                const clerk = new window.Clerk(CLERK_PK);
+                await clerk.load();
 
             document.getElementById('googleLoginBtn').addEventListener('click', async () => {
                 const btn = document.getElementById('googleLoginBtn');
@@ -115,13 +119,8 @@
 
                     await clerk.signIn.authenticateWithRedirect({
                         strategy: "oauth_google",
-<<<<<<< HEAD
                         redirectUrl: window.location.origin + "/sso-callback",
                         redirectUrlComplete: window.location.origin + "/sso-callback"
-=======
-                        redirectUrl: "/sso-callback",
-                        redirectUrlComplete: "/dashboard"
->>>>>>> a020675087b727f059f81924023580ac3e3efa17
                     });
                 } catch (err) {
                     errDiv.textContent = "Google sign-in failed: " + (err.message || err);
@@ -130,9 +129,20 @@
                     btnText.textContent = "Continue with Google";
                 }
             });
+            } catch (initErr) {
+                console.error('[Clerk init error]', initErr);
+                document.getElementById('googleError').textContent = "Google login unavailable. Please use email/password.";
+                document.getElementById('googleError').style.display = 'block';
+            }
         };
     }
 
     initClerkGoogle();
+
+    // Warn Edge users
+    if (navigator.userAgent.includes('Edg/')) {
+        const w = document.getElementById('edgeWarning');
+        if (w) w.style.display = 'block';
+    }
 </script>
 {% endblock %}

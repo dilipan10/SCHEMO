@@ -239,6 +239,9 @@
                 <span id="googleSignupBtnText">Sign up with Google</span>
             </button>
             <div id="googleSignupError" style="color:var(--danger); font-size:0.8rem; margin-top:0.5rem; display:none; text-align:center;"></div>
+            <p id="edgeWarning" style="display:none;color:#F59E0B;font-size:.75rem;text-align:center;margin-top:.4rem;">
+                ⚠️ Edge browser may block Google login. Use Chrome for best experience.
+            </p>
 
             <div class="auth-footer" style="border-top:1px solid var(--glass-border); padding-top:1.5rem; margin-top:1.5rem;">
                 Already have an account?
@@ -287,8 +290,9 @@
         document.head.appendChild(script);
 
         script.onload = async () => {
-            const clerk = window.Clerk;
-            await clerk.load();
+            try {
+                const clerk = new window.Clerk(CLERK_PK);
+                await clerk.load();
 
             btn.addEventListener('click', async () => {
                 try {
@@ -308,10 +312,21 @@
                     btnText.textContent = "Sign up with Google";
                 }
             });
+            } catch (initErr) {
+                console.error('[Clerk init error]', initErr);
+                errDiv.textContent = "Google sign-up unavailable. Please use the form above.";
+                errDiv.style.display = 'block';
+            }
         };
     }
 
     initClerkGoogleSignup();
+
+    // Warn Edge users
+    if (navigator.userAgent.includes('Edg/')) {
+        const w = document.getElementById('edgeWarning');
+        if (w) w.style.display = 'block';
+    }
 </script>
 
 {% endblock %}

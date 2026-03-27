@@ -12,7 +12,6 @@ from flask import (
 from functools import wraps
 from datetime import date
 import models
-from sms import send_otp_sms
 
 bp = Blueprint("main", __name__)
 
@@ -353,7 +352,6 @@ def smart_reply(user_message: str) -> str:
 # =============================================================================
 
 SYSTEM_PROMPT = (
-<<<<<<< HEAD
     "You are Schemo AI — a professional AI Advisor for Indian Government Schemes. "
     "You have access to a real database of schemes. When the user asks about schemes, "
     "use the SCHEME DATA provided in the context to give accurate answers. "
@@ -376,7 +374,6 @@ def get_db_schemes_context(query: str) -> str:
             text = f"{s.get('scheme_name','')} {s.get('description','')} {s.get('eligibility','')} {s.get('community','')}".lower()
             if any(word in text for word in q.split() if len(word) > 2):
                 matched.append(s)
-        # Top 5 matches
         matched = matched[:5]
         if not matched:
             return ""
@@ -393,22 +390,6 @@ def get_db_schemes_context(query: str) -> str:
     except Exception as e:
         print(f"[DB Context Error] {e}")
         return ""
-
-
-=======
-    "You are Schemo AI — a world-class, professional AI Advisor specialized in Indian Government Schemes. "
-    "Your personality: Empathetic, expert, accurate, and extremely helpful. "
-    "Schemo is a portal for Indian citizens (Students, Farmers, Women, Entrepreneurs, etc.) to discover benefits. "
-    "RULES: "
-    "1. If the user asks in Tamil, reply in Tamil. If English, reply in English. "
-    "2. For every scheme provide: Name, Eligibility, Benefits, Steps to Apply, and official Link. "
-    "3. Use Markdown formatting: bold headers, bullet points. "
-    "4. Be conversational but concise. Use professional emojis. "
-    "5. Help the user navigate their life goals using government resources."
-)
-
-
->>>>>>> a020675087b727f059f81924023580ac3e3efa17
 @bp.route("/api/chatbot", methods=["POST"])
 def chatbot():
     data = request.get_json(force=True) or {}
@@ -417,19 +398,15 @@ def chatbot():
     if not user_message:
         return jsonify({"reply": "Please type a message!"}), 200
 
-<<<<<<< HEAD
     # Always fetch relevant schemes from DB to ground the answer
     db_context = get_db_schemes_context(user_message)
 
-=======
->>>>>>> a020675087b727f059f81924023580ac3e3efa17
     api_key = os.environ.get("GROQ_API_KEY", "").strip()
     if api_key:
         try:
             from groq import Groq
 
             history = data.get("history", [])
-<<<<<<< HEAD
             # Build system prompt with live DB context
             system_with_context = SYSTEM_PROMPT
             if db_context:
@@ -439,13 +416,6 @@ def chatbot():
 
             for turn in history:
                 role = turn.get("role", "user")
-=======
-            messages = [{"role": "system", "content": SYSTEM_PROMPT}]
-
-            for turn in history:
-                role = turn.get("role", "user")
-                # Groq uses 'assistant' not 'model'
->>>>>>> a020675087b727f059f81924023580ac3e3efa17
                 if role == "model":
                     role = "assistant"
                 content = turn.get("content") or (
@@ -462,11 +432,7 @@ def chatbot():
             response = client.chat.completions.create(
                 model="llama-3.3-70b-versatile",
                 messages=messages,
-<<<<<<< HEAD
                 temperature=0.7,
-=======
-                temperature=0.8,
->>>>>>> a020675087b727f059f81924023580ac3e3efa17
                 max_tokens=1024,
             )
             return jsonify({"reply": response.choices[0].message.content}), 200
@@ -474,13 +440,9 @@ def chatbot():
         except Exception as e:
             print(f"[Bot Debug] Groq failed: {e}")
 
-<<<<<<< HEAD
     # Fallback: if DB has matches, show them; else use keyword KB
     if db_context:
         return jsonify({"reply": db_context + "\n\n💡 Ask me anything about these schemes!"}), 200
-=======
-    # Built-in fallback if Groq fails
->>>>>>> a020675087b727f059f81924023580ac3e3efa17
     return jsonify({"reply": smart_reply(user_message)}), 200
 
 
@@ -550,12 +512,8 @@ def index():
 @bp.route("/sso-callback")
 def sso_callback():
     """Clerk SSO callback — Clerk JS handles the token, then syncs with backend."""
-<<<<<<< HEAD
     clerk_key = os.environ.get("CLERK_PUBLISHABLE_KEY", "")
     return render_template("sso_callback.html", clerk_publishable_key=clerk_key)
-=======
-    return render_template("sso_callback.html")
->>>>>>> a020675087b727f059f81924023580ac3e3efa17
 
 
 @bp.route("/schemes")
@@ -677,41 +635,18 @@ def signup():
             flash("This phone number is already registered.", "warning")
             return render_template("signup.html", clerk_publishable_key=clerk_key)
 
-<<<<<<< HEAD
-        try:
-            models.create_user(
-                name, email, phone_number, password,
-                int(age), gender, community, occupation, state
-            )
-            flash("Account created successfully! Please log in.", "success")
-            return redirect(url_for("main.login"))
-        except Exception as e:
-            flash(f"Error creating account: {e}", "danger")
-            return render_template("signup.html", clerk_publishable_key=clerk_key)
-=======
-        # Generate 6-digit OTP
+        # Generate 6-digit OTP and store in session
         import random
         otp = str(random.randint(100000, 999999))
-        
-        # Store in session
         session["signup_otp"] = otp
         session["signup_data"] = {
             "name": name, "email": email, "phone_number": phone_number,
             "password": password, "age": age, "gender": gender,
             "community": community, "occupation": occupation, "state": state
         }
-        
-        # Send OTP via SMS
-        sms_sent = send_otp_sms(phone_number, otp)
-        
-        if sms_sent:
-            flash(f"OTP sent to {phone_number}. Please check your SMS.", "success")
-        else:
-            # Fallback: show OTP in flash (dev mode)
-            flash(f"SMS service unavailable. Your OTP is: {otp}", "warning")
-        
+
+        flash(f"Your OTP is: {otp} — enter it below to verify.", "info")
         return render_template("signup_otp.html", phone=phone_number)
->>>>>>> a020675087b727f059f81924023580ac3e3efa17
 
     return render_template("signup.html", clerk_publishable_key=clerk_key)
 
@@ -757,24 +692,13 @@ def login():
             otp = str(random.randint(100000, 999999))
             session["login_otp"] = otp
             session["login_user_id"] = user["id"]
-            
-            # Send OTP via SMS
             phone = user.get("phone_number", "")
-            sms_sent = send_otp_sms(phone, otp)
-            
-            if sms_sent:
-                flash(f"OTP sent to your registered phone. Please check SMS.", "success")
-            else:
-                flash(f"SMS unavailable. Your OTP is: {otp}", "warning")
-            
+
+            flash(f"Your OTP is: {otp} — enter it below to verify.", "info")
             return render_template("login_otp.html", phone=phone)
         else:
             flash("Invalid email or password.", "danger")
 
-<<<<<<< HEAD
-=======
-    clerk_key = os.environ.get("CLERK_PUBLISHABLE_KEY", "")
->>>>>>> a020675087b727f059f81924023580ac3e3efa17
     return render_template("login.html", clerk_publishable_key=clerk_key)
 
 
@@ -955,10 +879,7 @@ def admin_upload_csv():
         if skipped:
             flash(f"Skipped {skipped} row(s) due to errors: {'; '.join(errors[:3])}", "warning")
 
-        # Notify users for all newly added schemes
-        for s in models.get_all_schemes()[-added:] if added else []:
-            notify_matching_users(s)
-
+        # Notify users for all newly added schemes (no-op without SMS)
         return redirect(url_for("main.admin_dashboard"))
 
     return render_template("upload_csv.html")
@@ -1006,10 +927,6 @@ def admin_add_scheme():
                 link        = request.form["official_link"].strip(),
             )
             flash("Scheme added successfully.", "success")
-            # Fire WhatsApp alerts to matching users in background
-            new_scheme = models.get_scheme_by_id(scheme_id) if scheme_id else None
-            if new_scheme:
-                notify_matching_users(new_scheme)
         except Exception as e:
             flash(f"Error adding scheme: {e}", "danger")
         return redirect(url_for("main.admin_dashboard"))
@@ -1228,84 +1145,116 @@ Based on the user profile vs scheme criteria, return ONLY valid JSON (no markdow
 
 
 # =============================================================================
-# WHATSAPP NOTIFICATIONS  (MSG91 — uses your existing key)
+# END OF ROUTES
 # =============================================================================
 
-def send_whatsapp_alert(to_phone: str, scheme_name: str, benefits: str, link: str):
-    """Send WhatsApp via MSG91. to_phone must be 10-digit Indian number."""
-    auth_key = os.environ.get("MSG91_AUTH_KEY", "")
 
-    if not auth_key:
-        print(f"[WhatsApp] MSG91 not configured — skipping {to_phone}")
-        return False
+# =============================================================================
+# PROFILE EDIT & PASSWORD CHANGE
+# =============================================================================
 
-    # Skip dummy Google-signup phones
-    if not to_phone or not to_phone.isdigit() or len(to_phone) != 10:
-        return False
+@bp.route("/profile/edit", methods=["GET", "POST"])
+@login_required
+def profile_edit():
+    user = models.get_user_by_id(session["user_id"])
+    if not user:
+        session.clear()
+        return redirect(url_for("main.login"))
 
-    try:
-        # MSG91 WhatsApp API
-        url = "https://api.msg91.com/api/v5/whatsapp/whatsapp-outbound-message/bulk/"
-        body = (
-            f"🎉 *New Scheme Alert — Schemo*\n\n"
-            f"*{scheme_name}*\n"
-            f"Benefits: {benefits[:200]}\n\n"
-            f"Apply here: {link}\n\n"
-            f"_Visit Schemo for more eligible schemes._"
-        )
-        payload = {
-            "integrated_number": os.environ.get("MSG91_WHATSAPP_NUMBER", ""),
-            "content_type": "template",
-            "payload": {
-                "to": f"91{to_phone}",
-                "type": "text",
-                "text": {"body": body}
-            }
-        }
-        headers = {"authkey": auth_key, "Content-Type": "application/json"}
-        import json as _json
-        resp = requests.post(url, data=_json.dumps(payload), headers=headers, timeout=10)
-        if resp.status_code == 200:
-            print(f"[WhatsApp] Sent to +91{to_phone}")
-            return True
-        else:
-            print(f"[WhatsApp] MSG91 error {resp.status_code}: {resp.text[:100]}")
-            return False
-    except Exception as e:
-        print(f"[WhatsApp Error] {to_phone}: {e}")
-        return False
+    if request.method == "POST":
+        name       = request.form.get("name", "").strip()
+        age        = request.form.get("age", 0)
+        gender     = request.form.get("gender", "")
+        community  = request.form.get("community", "")
+        occupation = request.form.get("occupation", "").strip()
+        state      = request.form.get("state", "").strip()
 
+        if not all([name, age, gender, community, occupation, state]):
+            flash("All fields are required.", "danger")
+            return render_template("profile_edit.html", user=user)
 
-def notify_matching_users(scheme: dict):
-    """Background: find all users eligible for scheme and WhatsApp them."""
-    import threading
-
-    def _run():
         try:
-            all_users = models.get_all_users()
-            scheme_community = scheme.get("community", "All")
-            comms = [c.strip() for c in scheme_community.split(",")]
-            min_age = int(scheme.get("min_age", 0))
-            max_age = int(scheme.get("max_age", 100))
-            sent = 0
-            for u in all_users:
-                u_comm = u.get("community", "")
-                u_age  = int(u.get("age", 0) or 0)
-                phone  = u.get("phone_number", "")
-                if "All" not in comms and u_comm not in comms:
-                    continue
-                if not (min_age <= u_age <= max_age):
-                    continue
-                ok = send_whatsapp_alert(
-                    phone,
-                    scheme.get("scheme_name", "New Scheme"),
-                    scheme.get("benefits", ""),
-                    scheme.get("official_link", "https://india.gov.in"),
-                )
-                if ok:
-                    sent += 1
-            print(f"[WhatsApp] Notified {sent} users for '{scheme.get('scheme_name')}'")
+            models.update_user(session["user_id"], age, gender, community, occupation, state, name=name)
+            session["user_name"] = name
+            flash("Profile updated successfully!", "success")
+            return redirect(url_for("main.dashboard"))
         except Exception as e:
-            print(f"[WhatsApp Notify Error] {e}")
+            flash(f"Error updating profile: {e}", "danger")
 
-    threading.Thread(target=_run, daemon=True).start()
+    return render_template("profile_edit.html", user=user)
+
+
+@bp.route("/profile/change-password", methods=["GET", "POST"])
+@login_required
+def change_password():
+    user = models.get_user_by_id(session["user_id"])
+    if not user:
+        session.clear()
+        return redirect(url_for("main.login"))
+
+    # Google users have no real password
+    is_google_user = user.get("phone_number", "").startswith("G")
+
+    if request.method == "POST":
+        if is_google_user:
+            flash("Password change is not available for Google sign-in accounts.", "warning")
+            return redirect(url_for("main.dashboard"))
+
+        current_pw  = request.form.get("current_password", "")
+        new_pw      = request.form.get("new_password", "")
+        confirm_pw  = request.form.get("confirm_password", "")
+
+        if not models.verify_user_password(user, current_pw):
+            flash("Current password is incorrect.", "danger")
+            return render_template("change_password.html", user=user)
+
+        if len(new_pw) < 6:
+            flash("New password must be at least 6 characters.", "danger")
+            return render_template("change_password.html", user=user)
+
+        if new_pw != confirm_pw:
+            flash("New passwords do not match.", "danger")
+            return render_template("change_password.html", user=user)
+
+        models.update_user_password(session["user_id"], new_pw)
+        flash("Password changed successfully!", "success")
+        return redirect(url_for("main.dashboard"))
+
+    return render_template("change_password.html", user=user, is_google_user=is_google_user)
+
+
+@bp.route("/profile/delete", methods=["POST"])
+@login_required
+def delete_account():
+    user_id = session["user_id"]
+    session.clear()
+    models.delete_user(user_id)
+    flash("Your account has been deleted.", "info")
+    return redirect(url_for("main.index"))
+
+
+# =============================================================================
+# HEALTH CHECK
+# =============================================================================
+
+@bp.route("/health")
+def health():
+    try:
+        models.get_all_schemes.__doc__  # lightweight check
+        return jsonify({"status": "ok", "service": "schemo"}), 200
+    except Exception as e:
+        return jsonify({"status": "error", "detail": str(e)}), 500
+
+
+# =============================================================================
+# CUSTOM ERROR HANDLERS  (registered on the app in app.py)
+# =============================================================================
+
+def register_error_handlers(app):
+    @app.errorhandler(404)
+    def not_found(e):
+        return render_template("404.html"), 404
+
+    @app.errorhandler(500)
+    def server_error(e):
+        return render_template("500.html"), 500

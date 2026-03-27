@@ -82,6 +82,26 @@ def delete_user(user_id):
     supabase.table("users").delete().eq("id", user_id).execute()
 
 
+def update_user(user_id, age, gender, community, occupation, state, name=None):
+    """Update user profile fields."""
+    payload = {
+        "age": int(age),
+        "gender": gender,
+        "community": community,
+        "occupation": occupation,
+        "state": state,
+    }
+    if name:
+        payload["name"] = name
+    supabase.table("users").update(payload).eq("id", user_id).execute()
+
+
+def update_user_password(user_id, new_password):
+    """Update hashed password for a user."""
+    hashed = generate_password_hash(new_password)
+    supabase.table("users").update({"password": hashed}).eq("id", user_id).execute()
+
+
 def get_user_stats():
     """Returns analytics data (totals, occupation, gender, community, timeline, trends)."""
     from datetime import datetime, timedelta

@@ -15,11 +15,7 @@ services:
         sync: false
       - key: CLERK_PUBLISHABLE_KEY
         sync: false
-      - key: MSG91_AUTH_KEY
+      - key: ADMIN_USERNAME
         sync: false
-      - key: TWILIO_ACCOUNT_SID
-        sync: false
-      - key: TWILIO_AUTH_TOKEN
-        sync: false
-      - key: TWILIO_WHATSAPP_FROM
+      - key: ADMIN_PASSWORD
         sync: false

@@ -12,7 +12,6 @@
 <span class="tag tag-gender">{{ user.gender }}</span>
 <span class="tag tag-state">{{ user.state }}</span>
 </div>
-<<<<<<< HEAD
 
 <!-- Profile Completion Bar -->
 {% set filled = [user.name, user.email, user.age, user.gender, user.community, user.occupation, user.state] | select | list | length %}
@@ -38,12 +37,9 @@
     <i data-lucide="moon" id="themeIcon" style="width:15px;height:15px;"></i>
     <span id="themeLabel">Dark</span>
   </button>
+  <a href="{{ url_for('main.profile_edit') }}" class="btn btn-outline btn-sm"><i data-lucide="user-cog"></i> Edit Profile</a>
   <a href="{{ url_for('main.logout') }}" class="btn btn-outline btn-sm"><i data-lucide="log-out"></i> Logout</a>
 </div>
-=======
-</div>
-<a href="{{ url_for('main.logout') }}" class="btn btn-outline btn-sm"><i data-lucide="log-out"></i> Logout</a>
->>>>>>> a020675087b727f059f81924023580ac3e3efa17
 </div>
 <div class="profile-details-grid">
 <div class="detail-card glass"><div class="detail-icon"><i data-lucide="calendar"></i></div><div><span class="detail-label">Age</span><span class="detail-value">{{ user.age }} years</span></div></div>
@@ -55,13 +51,11 @@
 </div>
 </div>
 <div class="dashboard-schemes">
-<<<<<<< HEAD
 <div class="section-header section-header--left" style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;">
   <div>
     <h2>Your Eligible Schemes <span class="scheme-count-badge">{{ schemes|length }}</span></h2>
     <p>Based on your age, community and occupation, you qualify for these government schemes:</p>
   </div>
-  <!-- Search & Filter -->
   <div style="display:flex;gap:.75rem;flex-wrap:wrap;align-items:center;">
     <input type="text" id="dashSearch" class="form-control" style="width:220px;padding:.6rem 1rem;font-size:.85rem;" placeholder="🔍 Search schemes…">
     <select id="dashStatus" class="form-control" style="width:140px;padding:.6rem 1rem;font-size:.85rem;">
@@ -78,7 +72,6 @@
 {% set days_left = ((s.deadline - today).days) if s.deadline and s.deadline.__class__.__name__ != 'str' else -1 %}
 <div class="scheme-card glass" data-name="{{ s.scheme_name|lower }}" data-status="{{ s.status|lower }}">
 
-  <!-- Deadline badge -->
   <div class="scheme-card-header">
     <span class="scheme-community-badge">{{ s.community }}</span>
     {% if s.status == 'Expired' %}
@@ -95,7 +88,6 @@
   <h3 class="scheme-card-title">{{ s.scheme_name }}</h3>
   <p class="scheme-card-desc">{{ s.description[:160] }}{% if s.description|length > 160 %}...{% endif %}</p>
 
-  <!-- AI Eligibility Score — loaded dynamically via Groq -->
   <div class="ai-score-bar" id="score-{{ s.id }}"
        data-scheme-id="{{ s.id }}"
        data-scheme-name="{{ s.scheme_name|e }}"
@@ -122,7 +114,6 @@
 
   <div style="display:flex;gap:.5rem;margin-top:1rem;flex-wrap:wrap;">
     <button class="btn btn-outline btn-sm" style="flex:1;" onclick="openSchemeModal({{ s|tojson }})"><i data-lucide="info"></i> Details</button>
-    <!-- Voice button -->
     <button class="btn btn-outline btn-sm" title="Read aloud" onclick="speakScheme('{{ s.scheme_name|e }}','{{ s.description[:120]|e }}','{{ s.benefits[:100]|e }}')">🔊</button>
     {% if s.status == 'Expired' %}
     <button class="btn btn-sm" disabled style="flex:1;cursor:not-allowed;opacity:0.5;background:var(--bg-card2);color:var(--text-muted);border:1px solid var(--glass-border);"><i data-lucide="x-circle"></i> Closed</button>
@@ -131,7 +122,6 @@
     {% endif %}
   </div>
 
-  <!-- Application Tracker -->
   {% if s.status != 'Expired' %}
   <div style="margin-top:.75rem;border-top:1px solid var(--glass-border);padding-top:.75rem;">
     <span style="font-size:.75rem;font-weight:600;color:var(--text-muted);">Track Application:</span>
@@ -148,44 +138,6 @@
   </div>
   {% endif %}
 
-=======
-<div class="section-header section-header--left">
-<h2>Your Eligible Schemes <span class="scheme-count-badge">{{ schemes|length }}</span></h2>
-<p>Based on your age, community and occupation, you qualify for these government schemes:</p>
-</div>
-{% if schemes %}
-<div class="scheme-grid">
-{% for s in schemes %}
-{% set dl_str = s.deadline.strftime('%d %b %Y') if s.deadline and s.deadline.__class__.__name__ != 'str' else (s.deadline or '') %}
-<div class="scheme-card glass" data-community="{{ s.community }}">
-<div class="scheme-card-header">
-<span class="scheme-community-badge">{{ s.community }}</span>
-{% if s.status == 'Expired' %}
-<span style="font-size:.8rem;font-weight:700;color:#EF4444;background:rgba(239,68,68,0.1);padding:.3rem .75rem;border-radius:99px;border:1px solid rgba(239,68,68,0.2);">Expired</span>
-{% elif s.deadline %}
-<span style="font-size:.8rem;font-weight:600;color:var(--text-muted);">{{ dl_str }}</span>
-{% else %}
-<span style="font-size:.8rem;font-weight:600;color:#10B981;">Ongoing</span>
-{% endif %}
-</div>
-<h3 class="scheme-card-title">{{ s.scheme_name }}</h3>
-<p class="scheme-card-desc">{{ s.description[:160] }}{% if s.description|length > 160 %}...{% endif %}</p>
-<div class="scheme-card-meta">
-<div class="meta-item"><span class="meta-label">Age Limit</span><span class="meta-value">{{ s.min_age }}-{{ s.max_age }} yrs</span></div>
-<div class="meta-item"><span class="meta-label">Max Income</span><span class="meta-value">{% if s.max_income >= 99999999 %}No limit{% else %}Rs.{{ "{:,.0f}".format(s.max_income) }}{% endif %}</span></div>
-</div>
-{% if s.status != 'Expired' and s.deadline %}
-<div class="deadline-countdown" data-deadline="{{ dl_str }}"><i data-lucide="clock" style="width:13px;height:13px;"></i><span class="countdown-text"></span></div>
-{% endif %}
-<div style="display:flex;gap:.6rem;margin-top:1rem;">
-<button class="btn btn-outline btn-sm" style="flex:1;" onclick="openSchemeModal({{ s|tojson }})"><i data-lucide="info"></i> Details</button>
-{% if s.status == 'Expired' %}
-<button class="btn btn-sm" disabled style="flex:1;cursor:not-allowed;opacity:0.5;background:var(--bg-card2);color:var(--text-muted);border:1px solid var(--glass-border);"><i data-lucide="x-circle"></i> Closed</button>
-{% else %}
-<a href="{{ s.official_link }}" target="_blank" rel="noopener" class="btn btn-primary btn-sm" style="flex:1;">Apply <i data-lucide="external-link"></i></a>
-{% endif %}
-</div>
->>>>>>> a020675087b727f059f81924023580ac3e3efa17
 </div>
 {% endfor %}
 </div>
@@ -203,29 +155,17 @@
 
 <!-- Scheme Detail Modal -->
 <div id="schemeModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.75);backdrop-filter:blur(6px);overflow-y:auto;padding:2rem 1rem;">
-<<<<<<< HEAD
 <div style="max-width:720px;margin:0 auto;background:var(--bg-card);border:1px solid var(--glass-border);border-radius:20px;overflow:hidden;box-shadow:var(--shadow-lg);">
 <div style="padding:1.75rem 2rem 1.25rem;border-bottom:1px solid var(--glass-border);display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;">
 <div>
 <div id="modalCommunityBadge" style="display:inline-block;font-size:.75rem;font-weight:700;padding:.3rem .85rem;border-radius:99px;background:rgba(59,130,246,0.15);color:#93c5fd;border:1px solid rgba(59,130,246,0.3);margin-bottom:.75rem;"></div>
 <h2 id="modalTitle" style="color:var(--text);font-size:1.35rem;font-weight:800;line-height:1.3;margin:0;"></h2>
-=======
-<div style="max-width:720px;margin:0 auto;background:#111827;border:1px solid rgba(255,255,255,0.1);border-radius:20px;overflow:hidden;">
-<div style="padding:1.75rem 2rem 1.25rem;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;">
-<div>
-<div id="modalCommunityBadge" style="display:inline-block;font-size:.75rem;font-weight:700;padding:.3rem .85rem;border-radius:99px;background:rgba(59,130,246,0.15);color:#93c5fd;border:1px solid rgba(59,130,246,0.3);margin-bottom:.75rem;"></div>
-<h2 id="modalTitle" style="color:#fff;font-size:1.35rem;font-weight:800;line-height:1.3;margin:0;"></h2>
->>>>>>> a020675087b727f059f81924023580ac3e3efa17
 </div>
 <button onclick="closeSchemeModal()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);color:#fff;border-radius:8px;padding:.5rem;cursor:pointer;flex-shrink:0;"><i data-lucide="x" style="width:18px;height:18px;"></i></button>
 </div>
 <div style="padding:1.75rem 2rem;display:flex;flex-direction:column;gap:1.5rem;">
 <div id="modalDeadlineRow" style="display:flex;gap:1rem;flex-wrap:wrap;"></div>
-<<<<<<< HEAD
 <div><h4 style="color:#94a3b8;font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem;">About this Scheme</h4><p id="modalDesc" style="color:var(--text-muted);line-height:1.7;margin:0;"></p></div>
-=======
-<div><h4 style="color:#94a3b8;font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem;">About this Scheme</h4><p id="modalDesc" style="color:#e2e8f0;line-height:1.7;margin:0;"></p></div>
->>>>>>> a020675087b727f059f81924023580ac3e3efa17
 <div style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.15);border-radius:12px;padding:1.25rem;">
 <h4 style="color:#10B981;font-size:.85rem;font-weight:700;margin-bottom:.6rem;display:flex;align-items:center;gap:.4rem;"><i data-lucide="gift" style="width:15px;height:15px;"></i> Benefits</h4>
 <p id="modalBenefits" style="color:#d1fae5;margin:0;line-height:1.7;"></p>
@@ -262,19 +202,13 @@
 <style>
 .deadline-countdown{display:flex;align-items:center;gap:.4rem;font-size:.8rem;color:#fbbf24;margin-top:.5rem;}
 .doc-item{display:flex;align-items:center;gap:.6rem;color:#ddd6fe;font-size:.9rem;}
-<<<<<<< HEAD
 .doc-item::before{content:"📄";font-size:.85rem;}
-=======
-.doc-item::before{content:"doc";font-size:.85rem;}
->>>>>>> a020675087b727f059f81924023580ac3e3efa17
 .where-item{display:flex;gap:.75rem;align-items:flex-start;padding:.6rem .75rem;background:rgba(255,255,255,0.03);border-radius:8px;border:1px solid rgba(255,255,255,0.06);}
 .where-icon{font-size:1.1rem;flex-shrink:0;margin-top:.1rem;}
 .where-text{font-size:.85rem;color:#fde68a;line-height:1.5;}
 .where-text strong{color:#fbbf24;display:block;margin-bottom:.15rem;}
-<<<<<<< HEAD
 .tracker-btn.active{background:rgba(59,130,246,0.2)!important;color:var(--primary-light)!important;border-color:var(--primary)!important;}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
-/* Light mode */
 body.light-mode {
   --bg: #F1F5F9;
   --bg-card: rgba(255,255,255,0.92);
@@ -523,86 +457,5 @@ document.addEventListener('keydown', e => { if(e.key==='Escape') closeSchemeModa
     // Start after page settles
     setTimeout(loadNext, 800);
 })();
-=======
-</style>
-
-<script>
-document.querySelectorAll('.deadline-countdown').forEach(function(el){
-    var raw=el.dataset.deadline; if(!raw)return;
-    var p=raw.split(' ');
-    var mo={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
-    var dl=new Date(parseInt(p[2]),mo[p[1]],parseInt(p[0]));
-    var diff=Math.ceil((dl-new Date())/(1000*60*60*24));
-    var sp=el.querySelector('.countdown-text');
-    if(diff<=0){el.style.display='none';return;}
-    if(diff<=7){sp.textContent='Only '+diff+' day'+(diff>1?'s':'')+' left!';el.style.color='#ef4444';}
-    else if(diff<=30){sp.textContent=diff+' days remaining';el.style.color='#fbbf24';}
-    else{sp.textContent=diff+' days remaining';el.style.color='#10b981';}
-});
-
-var DOC_GUIDE={
-    "aadhaar":{icon:"ID",label:"Aadhaar Card",where:"Nearest Aadhaar Enrolment Centre (Post Office / Bank). Book at uidai.gov.in"},
-    "income certificate":{icon:"$",label:"Income Certificate",where:"Tahsildar / Revenue Department office in your taluk."},
-    "caste certificate":{icon:"C",label:"Caste Certificate",where:"Tahsildar / Revenue Department office. Bring Aadhaar + ration card."},
-    "bank":{icon:"B",label:"Bank Passbook / Account",where:"Nearest nationalised bank or Post Office for zero-balance Jan Dhan account."},
-    "marksheet":{icon:"M",label:"Marksheet / Certificate",where:"Your school or college examination section."},
-    "bpl":{icon:"R",label:"BPL / Ration Card",where:"Nearest Ration Shop or Taluk Supply Office. Online: tnpds.gov.in"},
-    "land":{icon:"L",label:"Land Records / Patta",where:"Village Administrative Officer (VAO) or Tahsildar office."},
-    "birth certificate":{icon:"BC",label:"Birth Certificate",where:"Municipal Corporation / Panchayat office. Online: tnreginet.gov.in"},
-    "disability":{icon:"D",label:"Disability Certificate",where:"Government Hospital (Civil Surgeon). Medical Board assessment required."},
-    "pan":{icon:"P",label:"PAN Card",where:"NSDL / UTIITSL centre or online at onlineservices.nsdl.com"},
-    "photo":{icon:"Ph",label:"Passport Photo",where:"Any photo studio. White background, recent photo."},
-    "enrollment":{icon:"E",label:"Bonafide / Enrollment Certificate",where:"Your school or college administrative office."}
-};
-
-function getDocGuide(t){
-    var l=t.toLowerCase();
-    return Object.entries(DOC_GUIDE).filter(function(e){return l.includes(e[0]);}).map(function(e){return e[1];});
-}
-
-function openSchemeModal(s){
-    document.getElementById('modalTitle').textContent=s.scheme_name;
-    document.getElementById('modalCommunityBadge').textContent=s.community;
-    document.getElementById('modalDesc').textContent=s.description;
-    document.getElementById('modalBenefits').textContent=s.benefits;
-    document.getElementById('modalEligibility').textContent=s.eligibility;
-    var dlRow=document.getElementById('modalDeadlineRow');
-    dlRow.innerHTML='';
-    var status=s.status||'Active';
-    var dl=s.deadline_str||s.deadline||'';
-    if(status==='Expired'){
-        dlRow.innerHTML='<span style="font-size:.8rem;font-weight:700;padding:.3rem .75rem;border-radius:99px;color:#EF4444;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);">Expired'+(dl?' - '+dl:'')+'</span>';
-    } else if(dl){
-        var p=String(dl).split(' ');var daysLeft='';
-        if(p.length===3){var mo={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};var d=new Date(parseInt(p[2]),mo[p[1]],parseInt(p[0]));var diff=Math.ceil((d-new Date())/(1000*60*60*24));if(diff>0)daysLeft=' - '+diff+' days left';}
-        dlRow.innerHTML='<span style="font-size:.8rem;font-weight:600;padding:.3rem .75rem;border-radius:99px;color:#10B981;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.2);">Apply before: '+dl+daysLeft+'</span>';
-    } else {
-        dlRow.innerHTML='<span style="font-size:.8rem;font-weight:600;padding:.3rem .75rem;border-radius:99px;color:#10B981;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.2);">Ongoing - No deadline</span>';
-    }
-    var docsList=document.getElementById('modalDocsList');
-    docsList.innerHTML='';
-    (s.documents_required||'').split(',').map(function(d){return d.trim();}).filter(Boolean).forEach(function(doc){
-        var li=document.createElement('li');li.className='doc-item';li.textContent=doc;docsList.appendChild(li);
-    });
-    var guide=document.getElementById('missingDocsGuide');
-    guide.innerHTML='';
-    var guides=getDocGuide(s.documents_required||'');
-    document.getElementById('missingDocsSection').style.display=guides.length?'block':'none';
-    guides.forEach(function(g){
-        var div=document.createElement('div');div.className='where-item';
-        div.innerHTML='<span class="where-icon">'+g.icon+'</span><div class="where-text"><strong>'+g.label+'</strong>'+g.where+'</div>';
-        guide.appendChild(div);
-    });
-    var btn=document.getElementById('modalApplyBtn');
-    if(status==='Expired'){btn.style.opacity='0.5';btn.style.pointerEvents='none';btn.textContent='Applications Closed';}
-    else{btn.style.opacity='1';btn.style.pointerEvents='';btn.href=s.official_link;btn.innerHTML='Apply on Official Portal <i data-lucide="external-link"></i>';}
-    document.getElementById('schemeModal').style.display='block';
-    document.body.style.overflow='hidden';
-    lucide.createIcons();
-}
-function closeSchemeModal(){document.getElementById('schemeModal').style.display='none';document.body.style.overflow='';}
-document.getElementById('schemeModal').addEventListener('click',function(e){if(e.target===this)closeSchemeModal();});
-document.addEventListener('keydown',function(e){if(e.key==='Escape')closeSchemeModal();});
->>>>>>> a020675087b727f059f81924023580ac3e3efa17
 </script>
 {% endblock %}

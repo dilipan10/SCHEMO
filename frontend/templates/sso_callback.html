@@ -1,12 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
-<<<<<<< HEAD
 <section style="min-height:80vh; display:flex; align-items:center; justify-content:center;">
     <div class="glass" style="padding:2.5rem 3rem; border-radius:20px; text-align:center; max-width:420px; width:100%;">
-=======
-<section style="min-height:80vh; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:1.5rem;">
-    <div class="glass" style="padding:2.5rem 3rem; border-radius:20px; text-align:center; max-width:400px;">
->>>>>>> a020675087b727f059f81924023580ac3e3efa17
         <div style="font-size:2.5rem; margin-bottom:1rem;">🔐</div>
         <h2 style="color:#fff; margin-bottom:.5rem;">Completing Sign-In…</h2>
         <p style="color:var(--text-muted); font-size:.95rem;">Please wait while we verify your Google account.</p>
@@ -15,7 +10,6 @@
             <span style="width:10px;height:10px;border-radius:50%;background:var(--primary);animation:bounce 1s infinite .2s;display:inline-block;"></span>
             <span style="width:10px;height:10px;border-radius:50%;background:var(--primary);animation:bounce 1s infinite .4s;display:inline-block;"></span>
         </div>
-<<<<<<< HEAD
         <p id="statusMsg" style="color:var(--text-muted); font-size:.85rem; margin-top:1.25rem; min-height:1.2em;"></p>
     </div>
 </section>
@@ -49,16 +43,16 @@
     });
 
     try {
-        const clerk = window.Clerk;
+        const clerk = new window.Clerk(CLERK_PK);
         await clerk.load();
 
         setMsg('Verifying with Google…');
 
         // Handle the OAuth redirect callback
-        const result = await clerk.handleRedirectCallback();
+        await clerk.handleRedirectCallback();
 
-        // After callback, clerk.user should be populated
-        await clerk.load(); // reload to get fresh user state
+        // Reload to get fresh user state
+        await clerk.load();
 
         const user = clerk.user;
 
@@ -98,10 +92,10 @@
 
     } catch (err) {
         console.error('[SSO Error]', err);
-        // Clerk sometimes throws on handleRedirectCallback if already handled
-        // Try to get user anyway
+        // Clerk sometimes throws on handleRedirectCallback if already handled — try to get user anyway
         try {
-            const clerk = window.Clerk;
+            const clerk = new window.Clerk(CLERK_PK);
+            await clerk.load();
             const user = clerk.user;
             if (user) {
                 const email = user.primaryEmailAddress?.emailAddress || '';
@@ -119,45 +113,6 @@
         setMsg('Something went wrong. Redirecting…');
         setTimeout(() => redirectTo('/login'), 2000);
     }
-=======
-    </div>
-</section>
-<style>
-@keyframes bounce { 0%,80%,100%{transform:scale(0)} 40%{transform:scale(1)} }
-</style>
-<script>
-// After Clerk processes the OAuth callback, extract user info and sync with Flask
-(async function() {
-    const CLERK_PK = "{{ config.get('CLERK_PUBLISHABLE_KEY', '') }}";
-    if (!CLERK_PK) { window.location.href = '/login'; return; }
-
-    const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js';
-    script.setAttribute('data-clerk-publishable-key', CLERK_PK);
-    document.head.appendChild(script);
-
-    script.onload = async () => {
-        const clerk = window.Clerk;
-        await clerk.load();
-        await clerk.handleRedirectCallback();
-
-        const user = clerk.user;
-        if (!user) { window.location.href = '/login'; return; }
-
-        const profileData = {
-            name: user.fullName || user.firstName || "User",
-            email: user.primaryEmailAddress?.emailAddress || "",
-        };
-
-        const res = await fetch('/api/auth/google', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(profileData)
-        });
-        const data = await res.json();
-        window.location.href = data.success ? data.redirect : '/login';
-    };
->>>>>>> a020675087b727f059f81924023580ac3e3efa17
 })();
 </script>
 {% endblock %}

@@ -1,166 +1,235 @@
 -- ============================================================
 -- Schemo - Government Scheme Aggregator Portal
 -- PostgreSQL / Supabase Schema
--- Run this in: Supabase Dashboard → SQL Editor
+-- Run this FULLY in: Supabase Dashboard → SQL Editor → New Query
 -- ============================================================
 
+-- Drop existing tables if re-running (safe re-run)
+DROP TABLE IF EXISTS schemes  CASCADE;
+DROP TABLE IF EXISTS users    CASCADE;
+DROP TABLE IF EXISTS admins   CASCADE;
+
 -- ============================================================
--- Users Table
+-- 1. USERS TABLE
 -- ============================================================
-CREATE TABLE IF NOT EXISTS users (
+CREATE TABLE users (
     id           BIGSERIAL PRIMARY KEY,
     name         VARCHAR(150)  NOT NULL,
     email        VARCHAR(200)  NOT NULL UNIQUE,
-    phone_number VARCHAR(15)   NOT NULL UNIQUE,
+    phone_number VARCHAR(20)   NOT NULL UNIQUE,
     password     VARCHAR(255)  NOT NULL,
-    age          INT           NOT NULL,
-    gender       VARCHAR(10)   NOT NULL CHECK (gender IN ('Male','Female','Other')),
-    community    VARCHAR(20)   NOT NULL CHECK (community IN ('General','OBC','SC','ST','Minority','EWS')),
-    occupation   VARCHAR(60)   NOT NULL CHECK (occupation IN ('Student','Working Professional','Government Employee','Self Employed','Unemployed','Senior Citizen','Other')),
-    state        VARCHAR(100)  NOT NULL,
+    age          INT           NOT NULL DEFAULT 0,
+    gender       VARCHAR(20)   NOT NULL DEFAULT 'Other',
+    community    VARCHAR(50)   NOT NULL DEFAULT 'General',
+    occupation   VARCHAR(100)  NOT NULL DEFAULT 'Other',
+    state        VARCHAR(100)  NOT NULL DEFAULT 'Not Specified',
     created_at   TIMESTAMPTZ   DEFAULT NOW()
 );
 
 -- ============================================================
--- Admins Table
+-- 2. ADMINS TABLE
 -- ============================================================
-CREATE TABLE IF NOT EXISTS admins (
+CREATE TABLE admins (
     id         BIGSERIAL PRIMARY KEY,
     username   VARCHAR(100) NOT NULL UNIQUE,
     password   VARCHAR(255) NOT NULL
 );
--- Default admin (admin / admin123) is seeded by app.py on first run.
 
 -- ============================================================
--- Schemes Table
+-- 3. SCHEMES TABLE
 -- ============================================================
-CREATE TABLE IF NOT EXISTS schemes (
+CREATE TABLE schemes (
     id                  BIGSERIAL PRIMARY KEY,
     scheme_name         VARCHAR(255)   NOT NULL,
-    description         TEXT           NOT NULL,
-    eligibility         TEXT           NOT NULL,
-    community           VARCHAR(255)   NOT NULL,  -- comma-separated or 'All'
+    description         TEXT           NOT NULL DEFAULT '',
+    eligibility         TEXT           NOT NULL DEFAULT '',
+    community           VARCHAR(255)   NOT NULL DEFAULT 'All',
     min_age             INT            DEFAULT 0,
     max_age             INT            DEFAULT 100,
-    max_income          NUMERIC(12,2)  DEFAULT 999999999,  -- 0 = no income limit
-    benefits            TEXT           NOT NULL,
-    documents_required  TEXT           NOT NULL,
+    max_income          NUMERIC(15,2)  DEFAULT 0,
+    benefits            TEXT           NOT NULL DEFAULT '',
+    documents_required  TEXT           NOT NULL DEFAULT '',
     deadline            DATE           NULL,
-    official_link       VARCHAR(500)   NOT NULL,
+    official_link       VARCHAR(500)   NOT NULL DEFAULT '',
     created_at          TIMESTAMPTZ    DEFAULT NOW()
 );
 
 -- ============================================================
--- Row Level Security (RLS)
--- Run AFTER creating tables. Uses Supabase service role key
--- from the backend, so RLS is bypassed server-side.
+-- 4. ROW LEVEL SECURITY
 -- ============================================================
 ALTER TABLE users   ENABLE ROW LEVEL SECURITY;
 ALTER TABLE admins  ENABLE ROW LEVEL SECURITY;
 ALTER TABLE schemes ENABLE ROW LEVEL SECURITY;
 
--- Allow service role full access (backend uses service role key)
-CREATE POLICY "service_role_all_users"   ON users   FOR ALL USING (true);
-CREATE POLICY "service_role_all_admins"  ON admins  FOR ALL USING (true);
-CREATE POLICY "service_role_all_schemes" ON schemes FOR ALL USING (true);
+-- Allow ALL operations via service role key (used by backend)
+CREATE POLICY "allow_all_users"   ON users   FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "allow_all_admins"  ON admins  FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "allow_all_schemes" ON schemes FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+-- Also allow anon read on schemes (for public browse page)
+CREATE POLICY "anon_read_schemes" ON schemes FOR SELECT TO anon USING (true);
 
 -- ============================================================
--- Sample Scheme Data
+-- 5. SAMPLE SCHEMES DATA
 -- ============================================================
 INSERT INTO schemes (scheme_name, description, eligibility, community, min_age, max_age, max_income, benefits, documents_required, deadline, official_link) VALUES
 
 ('PM Kisan Samman Nidhi',
- 'Financial support to farmer families with landholding up to 2 hectares.',
- 'Farmer families with cultivable land up to 2 hectares. Annual household income below 1,50,000.',
- 'All', 18, 65, 150000,
- '6000 per year in three installments of 2000 each, directly credited to bank account.',
- 'Aadhaar Card, Land ownership documents, Bank passbook, Mobile number',
- '2026-12-31', 'https://pmkisan.gov.in'),
+ 'Financial support to farmer families providing direct income support of Rs.6000 per year.',
+ 'Small and marginal farmers with cultivable land. Must be registered in PM Kisan portal.',
+ 'All', 18, 70, 0,
+ 'Rs.6000 per year in 3 installments of Rs.2000 directly to bank account.',
+ 'Aadhaar Card|Land Records (Khatoni)|Bank Passbook|Mobile Number',
+ NULL, 'https://pmkisan.gov.in'),
 
 ('PM Ujjwala Yojana',
- 'Free LPG connections to women from below poverty line households.',
- 'Women aged 18 or above from BPL families. Annual income below 1,20,000.',
+ 'Free LPG gas connection scheme for women from BPL households.',
+ 'Women above 18 years from BPL families without existing LPG connection.',
  'All', 18, 60, 120000,
- 'Free LPG connection, one cylinder refill subsidy, EMI facility for stove and first refill.',
- 'BPL Ration Card, Aadhaar Card, Bank account details, Passport-size photograph',
- '2027-03-31', 'https://pmuy.gov.in'),
+ 'Free LPG gas connection + first refill free + stove free of cost.',
+ 'Aadhaar Card|BPL Ration Card|Bank Account|Passport Photo',
+ NULL, 'https://pmujjwalayojana.com'),
 
-('Pradhan Mantri Awas Yojana (Urban)',
- 'Affordable housing for EWS/LIG/MIG applicants in urban areas.',
- 'EWS/LIG/MIG applicants with annual income up to 18 lakh. No pucca house anywhere in India.',
- 'EWS,General,OBC,SC,ST,Minority', 21, 70, 1800000,
- 'Interest subsidy of 3% to 6.5% on home loan, credit linked subsidy up to 2.67 lakh.',
- 'Aadhaar Card, Income Certificate, Bank statements (6 months), Self-declaration of no house ownership',
- '2026-09-30', 'https://pmaymis.gov.in'),
+('Ayushman Bharat PMJAY',
+ 'Health insurance scheme providing coverage up to Rs.5 lakh per family per year.',
+ 'Families listed in SECC 2011 database or state scheme beneficiaries.',
+ 'All', 0, 100, 0,
+ 'Health insurance up to Rs.5 lakh per family per year. Cashless treatment at 25000+ hospitals.',
+ 'Aadhaar Card|Ration Card|PMJAY Eligibility Letter',
+ NULL, 'https://pmjay.gov.in'),
 
-('National Scholarship Portal - Pre-Matric',
- 'Scholarship for SC/ST/OBC students in Class 1 to 10.',
- 'Students from SC/ST/OBC communities in Class 1-10. Family income below 2,50,000 per annum.',
- 'SC,ST,OBC', 5, 17, 250000,
- '1000 to 3500 per annum depending on class and day scholar/hostel status.',
- 'School Enrollment Certificate, Caste Certificate, Income Certificate, Bank account, Aadhaar Card',
- '2026-10-31', 'https://scholarships.gov.in'),
-
-('National Scholarship Portal - Post-Matric',
+('National Scholarship Portal - Post Matric',
  'Scholarship for SC/ST/OBC/Minority students in Class 11 and above.',
- 'Students from SC/ST/OBC/Minority communities in Class 11 and above. Family income below 2,50,000.',
+ 'Students from SC/ST/OBC/Minority communities in Class 11 and above. Family income below Rs.2.5 lakh.',
  'SC,ST,OBC,Minority', 15, 30, 250000,
- 'Maintenance allowance 300 to 1200 per month and reimbursement of compulsory fees.',
- 'Marksheet, Caste Certificate, Income Certificate, College enrollment letter, Bank account, Aadhaar Card',
+ 'Maintenance allowance Rs.300 to Rs.1200 per month + full tuition fee reimbursement.',
+ 'Marksheet|Caste Certificate|Income Certificate|College Enrollment Letter|Bank Account|Aadhaar Card',
  '2026-11-30', 'https://scholarships.gov.in'),
 
+('PM Awas Yojana Gramin',
+ 'Free housing scheme for BPL families in rural areas without pucca house.',
+ 'BPL families in rural areas without pucca house listed in SECC 2011.',
+ 'All', 18, 65, 0,
+ 'Rs.1.20 lakh in plain areas and Rs.1.30 lakh in hilly areas for house construction.',
+ 'Aadhaar Card|BPL Card|Land Documents|Bank Account',
+ NULL, 'https://pmayg.nic.in'),
+
 ('Beti Bachao Beti Padhao',
- 'Scheme to address declining Child Sex Ratio and empower women.',
- 'Girl child from birth to 18 years. Parents or guardians must be Indian citizens.',
- 'All', 0, 18, 999999999,
- 'Conditional cash transfer, educational scholarship, skill training incentives.',
- 'Birth certificate of girl child, Aadhaar Card of parents, Bank account of parents',
- '2027-03-31', 'https://wcd.nic.in/bbbp-schemes'),
+ 'Scheme to promote welfare and education of girl children across India.',
+ 'Girl children from 0 to 18 years. Parents must be Indian citizens.',
+ 'All', 0, 18, 0,
+ 'Education support, welfare programs and awareness campaigns for girl child.',
+ 'Birth Certificate|Aadhaar Card of Parent|Bank Account of Parent',
+ NULL, 'https://wcd.nic.in'),
+
+('Sukanya Samriddhi Yojana',
+ 'High-interest savings scheme for girl child education and marriage expenses.',
+ 'Parents or guardians of girl child below 10 years.',
+ 'All', 0, 10, 0,
+ '8.2% interest per annum tax-free savings. Maturity on girl turning 21.',
+ 'Birth Certificate of Girl Child|Aadhaar Card of Parent|Bank Account',
+ NULL, 'https://nsiindia.gov.in'),
 
 ('Atal Pension Yojana',
- 'Guaranteed minimum pension scheme for citizens in the unorganized sector.',
- 'Indian citizens aged 18 to 40, not a member of any statutory social security scheme.',
- 'All', 18, 40, 999999999,
- 'Guaranteed monthly pension of 1000 to 5000 after age 60.',
- 'Aadhaar Card, Savings bank account, Mobile number linked to Aadhaar',
+ 'Guaranteed pension scheme for unorganized sector workers.',
+ 'Indian citizens between 18 to 40 years with bank account, not covered under any statutory social security.',
+ 'All', 18, 40, 0,
+ 'Guaranteed monthly pension of Rs.1000 to Rs.5000 after age 60.',
+ 'Aadhaar Card|Bank Account|Mobile Number',
  NULL, 'https://npscra.nsdl.co.in'),
 
-('PM SVANidhi - Street Vendor Loan',
- 'Micro-credit facility for street vendors to restart livelihoods.',
- 'Street vendors in urban areas with a vending certificate. Age 18 to 60.',
- 'All', 18, 60, 360000,
- 'Working capital loan of 10000 (1st), 20000 (2nd), 50000 (3rd term). Interest subsidy 7%.',
- 'Vending Certificate, Aadhaar Card, Bank account details',
- '2026-12-31', 'https://pmsvanidhi.mohua.gov.in'),
+('PM Mudra Yojana',
+ 'Micro loan scheme for small businesses and entrepreneurs without collateral.',
+ 'Small business owners and entrepreneurs. No collateral required.',
+ 'All', 18, 65, 0,
+ 'Loans up to Rs.10 lakh: Shishu (up to Rs.50K), Kishore (Rs.50K-5L), Tarun (Rs.5L-10L).',
+ 'Aadhaar Card|Business Proof|Bank Account|Passport Photo',
+ NULL, 'https://mudra.org.in'),
 
-('EWS Scholarship for Higher Education',
- 'Scholarship for EWS students pursuing higher education.',
- 'EWS students with family income below 8 lakh, enrolled in recognized institutions.',
- 'EWS,General', 17, 30, 800000,
- 'Scholarship amount of 10000 per year for graduate and post-graduate courses.',
- 'EWS Certificate, Income Certificate, Aadhaar Card, College admission letter, Bank account',
- '2026-09-30', 'https://scholarships.gov.in'),
+('PM Kaushal Vikas Yojana',
+ 'Free skill training scheme for youth with certification and cash reward.',
+ 'Youth between 15 to 45 years seeking skill development and employment.',
+ 'All', 15, 45, 0,
+ 'Free skill training + Rs.8000 reward on successful certification.',
+ 'Aadhaar Card|Bank Account|Educational Certificate',
+ NULL, 'https://pmkvyofficial.org'),
 
-('Stand-Up India Scheme',
- 'Bank loans for SC/ST and women borrowers for greenfield enterprises.',
+('MGNREGS - 100 Days Employment',
+ '100 days guaranteed employment scheme for rural households.',
+ 'Any adult member of rural household willing to do unskilled manual work.',
+ 'All', 18, 60, 0,
+ '100 days guaranteed employment per year at Rs.220 to Rs.350 per day.',
+ 'Aadhaar Card|Job Card from Gram Panchayat|Bank Account',
+ NULL, 'https://nrega.nic.in'),
+
+('Standup India',
+ 'Bank loans for SC/ST and women entrepreneurs for greenfield enterprises.',
  'SC/ST borrowers or women entrepreneurs setting up a new greenfield enterprise.',
- 'SC,ST', 18, 55, 999999999,
- 'Bank loan from 10 lakh to 1 crore, repayment tenure 7 years, moratorium 18 months.',
- 'Aadhaar Card, PAN Card, Business plan, Caste Certificate, Bank account, Business address proof',
- '2027-03-31', 'https://standupmitra.in'),
+ 'SC,ST', 18, 65, 0,
+ 'Loans from Rs.10 lakh to Rs.1 crore for new business setup.',
+ 'Aadhaar Card|PAN Card|Business Plan|Caste Certificate|Bank Account',
+ NULL, 'https://standupmitra.in'),
 
-('PM Scholarship Scheme for Widows and Ex-Servicemen',
- 'Scholarship for wards and widows of ex-servicemen for higher technical education.',
- 'Wards or widows of Ex-servicemen. Minimum 60% marks in qualifying exam. Age below 26.',
- 'All', 18, 26, 999999999,
- '2500 per month for boys and 3000 per month for girls for approved courses.',
- 'PPO of ex-serviceman, Aadhaar Card, Marksheets, Bonafide certificate, Bank account',
- '2026-10-31', 'https://ksb.gov.in'),
+('Indira Gandhi National Old Age Pension',
+ 'Monthly pension for elderly BPL citizens above 60 years.',
+ 'BPL citizens above 60 years.',
+ 'All', 60, 100, 0,
+ 'Rs.200 per month for age 60-79 and Rs.500 per month for age 80 and above.',
+ 'Aadhaar Card|Age Proof|BPL Certificate|Bank Account',
+ NULL, 'https://nsap.nic.in'),
 
-('Minority Welfare Scholarship - Maulana Azad',
- 'Merit-cum-means scholarship for minority community students in professional courses.',
- 'Students from minority communities. Family income below 2.5 lakh. Minimum 50% marks.',
- 'Minority', 17, 30, 250000,
- 'Course fee reimbursement and maintenance allowance of 10000 per year.',
- 'Minority community certificate, Income Certificate, Aadhaar Card, Marksheets, Admission letter, Bank account',
- '2026-09-30', 'https://maef.nic.in');
+('Kalaignar Magalir Urimai Thittam',
+ 'Monthly cash transfer scheme for women in Tamil Nadu.',
+ 'Women above 21 years who are head of family with annual income below Rs.2.5 lakh in Tamil Nadu.',
+ 'All', 21, 60, 250000,
+ 'Rs.1000 per month direct cash transfer to bank account.',
+ 'Aadhaar Card|Ration Card|Bank Account|Income Certificate',
+ NULL, 'https://tn.gov.in'),
+
+('Pudhumai Penn Scheme',
+ 'Monthly stipend for girl students from Tamil Nadu government schools in higher education.',
+ 'Girls who studied Class 6 to 12 in Tamil Nadu government schools now in higher education.',
+ 'All', 18, 30, 0,
+ 'Rs.1000 per month stipend until graduation.',
+ 'School Transfer Certificate|College Admission Proof|Aadhaar Card|Bank Account',
+ NULL, 'https://tn.gov.in'),
+
+('Post Matric Scholarship SC Students',
+ 'Scholarship for Scheduled Caste students in Class 11 and above.',
+ 'SC students in Class 11 and above with family income below Rs.2.5 lakh.',
+ 'SC', 15, 35, 250000,
+ 'Full tuition fee reimbursement + maintenance allowance Rs.230 to Rs.1200 per month.',
+ 'Aadhaar Card|Caste Certificate|Income Certificate|Bank Account|Marksheet',
+ '2026-11-30', 'https://scholarships.gov.in'),
+
+('PM Jan Dhan Yojana',
+ 'Financial inclusion scheme providing zero-balance bank accounts to unbanked citizens.',
+ 'All Indian citizens without a bank account.',
+ 'All', 10, 100, 0,
+ 'Zero balance bank account + RuPay debit card + Rs.2 lakh accident insurance + Rs.30000 life cover.',
+ 'Aadhaar Card|Passport Photo',
+ NULL, 'https://pmjdy.gov.in'),
+
+('PM Fasal Bima Yojana',
+ 'Crop insurance scheme providing financial support to farmers for crop loss.',
+ 'All farmers growing notified crops in notified areas.',
+ 'All', 18, 70, 0,
+ 'Full insurance coverage for crop loss at 2% premium for Kharif and 1.5% for Rabi crops.',
+ 'Aadhaar Card|Land Record|Bank Account|Sowing Certificate',
+ NULL, 'https://pmfby.gov.in'),
+
+('Janani Suraksha Yojana',
+ 'Cash incentive for institutional delivery for pregnant women from BPL families.',
+ 'Pregnant women from BPL families delivering in government or accredited hospitals.',
+ 'All', 18, 45, 0,
+ 'Cash incentive of Rs.1400 in rural areas and Rs.1000 in urban areas.',
+ 'Aadhaar Card|BPL Card|Bank Account|MCP Card',
+ NULL, 'https://nhm.gov.in'),
+
+('PM SVANidhi Street Vendor Loan',
+ 'Working capital loan for street vendors to restart livelihoods.',
+ 'Street vendors in urban areas with vending certificate. Age 18 to 60.',
+ 'All', 18, 60, 0,
+ 'Loan Rs.10000 (1st), Rs.20000 (2nd), Rs.50000 (3rd). Interest subsidy 7%.',
+ 'Vending Certificate|Aadhaar Card|Bank Account',
+ NULL, 'https://pmsvanidhi.mohua.gov.in');

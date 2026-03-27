@@ -1,6 +1,6 @@
 # Schemo – Government Scheme Aggregator Portal
 
-> A full-stack Flask + Supabase web app where Indian citizens can register, log in, and discover government welfare schemes they are eligible for — with AI-powered matching, voice input, real-time scraping, and WhatsApp alerts.
+> A full-stack Flask + Supabase web app where Indian citizens can register, log in, and discover government welfare schemes they are eligible for — with AI-powered matching, voice input, real-time scraping, and SMS alerts.
 
 ---
 
@@ -13,7 +13,7 @@ schemo/
 │   ├── routes.py       ← All URL routes (Blueprint)
 │   ├── models.py       ← Supabase query functions
 │   ├── database.py     ← Supabase client setup
-│   ├── sms.py          ← MSG91 OTP + WhatsApp
+│   ├── sms.py          ← MSG91 OTP + Scheme SMS alerts
 │   └── scraper.py      ← Web scraper (MyScheme.gov.in, India.gov.in)
 │
 ├── frontend/
@@ -67,7 +67,6 @@ GROQ_API_KEY=your_groq_api_key
 CLERK_PUBLISHABLE_KEY=your_clerk_pk
 MSG91_AUTH_KEY=your_msg91_key
 MSG91_TEMPLATE_ID=your_dlt_template_id
-MSG91_WHATSAPP_NUMBER=your_whatsapp_number
 ADMIN_USERNAME=admin
 ADMIN_PASSWORD=your_password
 ```
@@ -157,8 +156,8 @@ Admin login: **http://127.0.0.1:5000/admin/login**
 - Analytics dashboard (user stats, trends, charts)
 
 ### Notifications
-- **WhatsApp alerts** via MSG91 — sent to matching users when a new scheme is added
-- **SMS OTP** via MSG91 (requires DLT template approval)
+- **SMS alerts** via MSG91 — sent to matching users when a new scheme is added
+- **SMS OTP** via MSG91 for 2FA on login and signup
 
 ### Deployment
 - Ready for **Render.com** (free tier)
@@ -216,7 +215,7 @@ Admin login: **http://127.0.0.1:5000/admin/login**
 | Database | Supabase (PostgreSQL) |
 | AI | Groq API — Llama 3.3 70B |
 | Auth | Clerk (Google OAuth) + Flask sessions |
-| SMS/WhatsApp | MSG91 |
+| SMS | MSG91 |
 | Scraping | requests + BeautifulSoup4 |
 | Frontend | HTML5, Vanilla CSS3, JavaScript ES6+ |
 | Icons | Lucide Icons (CDN) |
@@ -236,7 +235,7 @@ Admin login: **http://127.0.0.1:5000/admin/login**
 - ✅ Added **scheme search** inside chatbot widget
 - ✅ Added **web scraper** (MyScheme.gov.in + India.gov.in)
 - ✅ Added **bulk CSV upload** for schemes
-- ✅ Added **WhatsApp alerts** via MSG91 on new scheme added
+- ✅ Added **SMS alerts** via MSG91 on new scheme added
 - ✅ Added **application tracker** (Saved/Applied/Documents Sent/Approved)
 - ✅ Added **profile completion bar**
 - ✅ Added **deadline badge** (red pulse when ≤ 7 days)

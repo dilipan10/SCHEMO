@@ -1,30 +1,9 @@
 # Schemo – Python Dependencies
-# Install with: pip install -r requirements.txt
-
-# ── Core Framework ──────────────────────────────────────────────
 Flask==3.1.0
 Werkzeug==3.1.3
-
-# ── Production Server ────────────────────────────────────────────
 gunicorn==21.2.0
-
-# ── Database ────────────────────────────────────────────────────
 supabase>=2.0.0
-
-# ── Environment Variables ────────────────────────────────────────
 python-dotenv==1.0.1
-
-# ── AI ───────────────────────────────────────────────────────────
 groq>=0.9.0
-
-# ── HTTP Requests ────────────────────────────────────────────────
 requests>=2.31.0
-<<<<<<< HEAD
-
-# ── WhatsApp Notifications ────────────────────────────────────────
-twilio>=8.0.0
-
-# ── Web Scraping ──────────────────────────────────────────────
 beautifulsoup4>=4.12.0
-=======
->>>>>>> a020675087b727f059f81924023580ac3e3efa17

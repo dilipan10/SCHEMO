@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="auth-section" style="padding:5rem 1.5rem 3rem;min-height:100vh;">
+<div style="max-width:700px;margin:0 auto;">
+
+  <div style="margin-bottom:2rem;">
+    <a href="{{ url_for('main.dashboard') }}" style="display:inline-flex;align-items:center;gap:.5rem;color:var(--text-muted);font-size:.9rem;">
+      <i data-lucide="arrow-left" style="width:16px;height:16px;"></i> Back to Dashboard
+    </a>
+  </div>
+
+  <div class="auth-card glass" style="border-radius:20px;padding:2.5rem;">
+    <div style="margin-bottom:2rem;">
+      <div style="display:inline-flex;align-items:center;gap:.5rem;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2);padding:.35rem 1rem;border-radius:99px;font-size:.8rem;font-weight:600;color:var(--primary-light);margin-bottom:1rem;">
+        <i data-lucide="user-cog" style="width:14px;height:14px;"></i> Edit Profile
+      </div>
+      <h1 style="font-size:1.75rem;font-weight:800;color:#fff;margin-bottom:.4rem;">Update Your Profile</h1>
+      <p style="color:var(--text-muted);">Keep your details accurate for better scheme matches.</p>
+    </div>
+
+    <form action="{{ url_for('main.profile_edit') }}" method="POST" class="auth-form">
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="name">Full Name</label>
+          <input type="text" id="name" name="name" class="form-control" required value="{{ user.name }}">
+        </div>
+        <div class="form-group">
+          <label>Email (cannot change)</label>
+          <input type="email" class="form-control" value="{{ user.email }}" disabled style="opacity:.5;cursor:not-allowed;">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="age">Age</label>
+          <input type="number" id="age" name="age" class="form-control" required min="1" max="120" value="{{ user.age }}">
+        </div>
+        <div class="form-group">
+          <label for="gender">Gender</label>
+          <select id="gender" name="gender" class="form-control" required>
+            <option value="Male"   {% if user.gender=='Male'   %}selected{% endif %}>Male</option>
+            <option value="Female" {% if user.gender=='Female' %}selected{% endif %}>Female</option>
+            <option value="Other"  {% if user.gender=='Other'  %}selected{% endif %}>Other</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="community">Community / Category</label>
+        <select id="community" name="community" class="form-control" required>
+          {% for c in ['General','OBC','SC','ST','Minority','EWS'] %}
+          <option value="{{ c }}" {% if user.community==c %}selected{% endif %}>{{ c }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="occupation">Occupation</label>
+        <select id="occupation" name="occupation" class="form-control" required>
+          {% for o in ['Student','Farmer','Unemployed','Business Owner','Salaried Employee','Self Employed','Senior Citizen','Women (General)','Other'] %}
+          <option value="{{ o }}" {% if user.occupation==o %}selected{% endif %}>{{ o }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="state">State / Union Territory</label>
+        <select id="state" name="state" class="form-control" required>
+          {% for s in ['Andhra Pradesh','Arunachal Pradesh','Assam','Bihar','Chhattisgarh','Goa','Gujarat','Haryana','Himachal Pradesh','Jharkhand','Karnataka','Kerala','Madhya Pradesh','Maharashtra','Manipur','Meghalaya','Mizoram','Nagaland','Odisha','Punjab','Rajasthan','Sikkim','Tamil Nadu','Telangana','Tripura','Uttar Pradesh','Uttarakhand','West Bengal','Delhi','Jammu & Kashmir','Ladakh','Chandigarh','Puducherry','Andaman and Nicobar Islands','Dadra and Nagar Haveli','Daman and Diu','Lakshadweep'] %}
+          <option value="{{ s }}" {% if user.state==s %}selected{% endif %}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div style="display:flex;gap:1rem;margin-top:1.5rem;flex-wrap:wrap;">
+        <button type="submit" class="btn btn-primary" style="flex:1;padding:.9rem;">
+          <i data-lucide="save"></i> Save Changes
+        </button>
+        <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline" style="flex:1;padding:.9rem;text-align:center;">
+          Cancel
+        </a>
+      </div>
+    </form>
+
+    <!-- Danger Zone -->
+    <div style="margin-top:2.5rem;padding-top:2rem;border-top:1px solid var(--glass-border);">
+      <h3 style="color:#EF4444;font-size:.95rem;font-weight:700;margin-bottom:.75rem;display:flex;align-items:center;gap:.5rem;">
+        <i data-lucide="alert-triangle" style="width:16px;height:16px;"></i> Danger Zone
+      </h3>
+      <p style="color:var(--text-muted);font-size:.85rem;margin-bottom:1rem;">Permanently delete your account and all data. This cannot be undone.</p>
+      <button onclick="document.getElementById('deleteModal').style.display='flex'" class="btn btn-sm" style="background:rgba(239,68,68,0.1);color:#EF4444;border:1px solid rgba(239,68,68,0.3);">
+        <i data-lucide="trash-2" style="width:14px;height:14px;"></i> Delete My Account
+      </button>
+    </div>
+  </div>
+
+  <!-- Change Password Link -->
+  <div style="text-align:center;margin-top:1.5rem;">
+    <a href="{{ url_for('main.change_password') }}" style="color:var(--text-muted);font-size:.9rem;display:inline-flex;align-items:center;gap:.4rem;">
+      <i data-lucide="key" style="width:15px;height:15px;"></i> Change Password
+    </a>
+  </div>
+</div>
+</section>
+
+<!-- Delete Confirm Modal -->
+<div id="deleteModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.8);align-items:center;justify-content:center;padding:1rem;">
+  <div class="glass" style="max-width:420px;width:100%;border-radius:20px;padding:2rem;text-align:center;">
+    <div style="font-size:3rem;margin-bottom:1rem;">⚠️</div>
+    <h2 style="color:#fff;margin-bottom:.75rem;">Delete Account?</h2>
+    <p style="color:var(--text-muted);margin-bottom:1.5rem;font-size:.9rem;">This will permanently delete your account and all your data. You cannot undo this.</p>
+    <div style="display:flex;gap:1rem;">
+      <button onclick="document.getElementById('deleteModal').style.display='none'" class="btn btn-outline" style="flex:1;">Cancel</button>
+      <form action="{{ url_for('main.delete_account') }}" method="POST" style="flex:1;">
+        <button type="submit" class="btn btn-sm" style="width:100%;padding:.75rem;background:rgba(239,68,68,0.15);color:#EF4444;border:1px solid rgba(239,68,68,0.4);">Yes, Delete</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
